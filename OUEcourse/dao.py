@@ -1,0 +1,59 @@
+import hashlib
+import os
+
+from werkzeug.utils import secure_filename
+
+from models import User, Lesson, Course
+from __init__ import app,db
+
+
+def auth_user(username,password,role=None):
+    password=str(hashlib.md5(password.encode('utf-8')).hexdigest())
+    return User.query.filter(User.username.__eq__(username),User.password.__eq__(password)).first()
+
+UPLOAD_FOLDER = "static/evidence"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+def add_user(username, password, email, fullname, role, evidence_file=None):
+    password = hashlib.md5(password.encode('utf-8')).hexdigest()
+    is_approved = True
+    evidence_path = None
+
+    if role == "INSTRUCTOR":
+        is_approved = False
+        if evidence_file:
+            filename = secure_filename(evidence_file.filename)
+            evidence_path = os.path.join(UPLOAD_FOLDER, filename)
+            evidence_file.save(evidence_path)
+
+    u = User(username=username,
+             password=password,
+             email=email,
+             fullName=fullname,
+             role=role,
+             evidence=evidence_path,
+             is_approved=is_approved,
+             balance=0)
+
+    db.session.add(u)
+    db.session.commit()
+
+def load_course(id=None,coure_id=None,kw=None,page=1):
+    query=Course.query
+
+    if kw:
+        return query.filter(Course.name.contains(kw))
+    if id:
+        return query.get(id)
+
+    page_size=app.config["PAGE_SIZE"]
+    start = (page - 1) * page_size
+    query = query.slice(start,start+page_size)
+
+    return query.all()
+
+def get_user_by_ID(id):
+    return User.query.get(id)
+
+def count_course():
+    return Course.query.count()
