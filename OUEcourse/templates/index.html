@@ -16,11 +16,11 @@
         <div class="card">
 
             <div class="card-body m-3">
-                <h4 class="card-title">{{ c.name }}</h4>
-                <p class="card-text">{{ c.price }} VNĐ</p>
-                <p class="card-text">{{ c.description }} VNĐ</p>
-                <p class="card-text">{{ c.instructor_id }} VNĐ</p>
-                <a href="/course/{{c.id}}" class="btn btn-primary">Xem chi tiết</a>
+                <h4 class="card-title">{{ c.title }}</h4>
+                <p class="card-text">{{ c.description }}</p>
+                <p class="card-text">Giảng viên: {{ c.instructor.fullName }}</p>
+                <p class="card-text">{{ c.price }} VND</p>
+                <a href="/" class="btn btn-primary">Đăng ký</a>
             </div>
         </div>
     </div>

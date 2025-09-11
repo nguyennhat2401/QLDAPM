@@ -1,9 +1,10 @@
 import hashlib
 import os
 
+from flask_login import current_user
 from werkzeug.utils import secure_filename
 
-from models import User, Lesson, Course
+from models import User, Lesson, Course, Enrollment
 from __init__ import app,db
 
 
@@ -52,8 +53,24 @@ def load_course(id=None,coure_id=None,kw=None,page=1):
 
     return query.all()
 
-def get_user_by_ID(id):
+def get_user_by_id(id):
     return User.query.get(id)
 
 def count_course():
     return Course.query.count()
+
+
+def get_courses_by_user_id(user_id):
+    return db.session.query(Course) \
+        .join(Enrollment, Enrollment.course_id == Course.id) \
+        .filter(Enrollment.student_id == user_id) \
+        .all()
+
+
+def get_lesson_by_course_id(course_id):
+
+    if not course_id:
+        return []
+
+    lessons = Lesson.query.filter_by(course_id=course_id).all()
+    return lessons

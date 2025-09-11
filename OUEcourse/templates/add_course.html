@@ -1,0 +1,46 @@
+{% extends 'layout/base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h3>Thêm khóa học mới</h3>
+    <form method="POST">
+        <div class="mb-3">
+            <label>Tiêu đề khóa học</label>
+            <input type="text" name="title" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label>Mô tả</label>
+            <textarea name="description" class="form-control"></textarea>
+        </div>
+        <div class="mb-3">
+            <label>Giá</label>
+            <input type="number" name="price" class="form-control" value="0">
+        </div>
+
+        <h5>Bài học</h5>
+        <div id="lesson-container">
+            <div class="lesson-item mb-2">
+                <input type="text" name="lesson_title" class="form-control mb-1" placeholder="Tiêu đề bài học" required>
+                <textarea name="lesson_content" class="form-control" placeholder="Nội dung bài học"></textarea>
+            </div>
+        </div>
+        <button type="button" class="btn btn-sm btn-secondary mt-2" onclick="addLesson()">Thêm bài học</button>
+
+        <div class="mt-3">
+            <button class="btn btn-success">Thêm khóa học</button>
+        </div>
+    </form>
+</div>
+
+<script>
+function addLesson() {
+    const container = document.getElementById("lesson-container");
+    const lessonDiv = document.createElement("div");
+    lessonDiv.classList.add("lesson-item", "mb-2");
+    lessonDiv.innerHTML = `
+        <input type="text" name="lesson_title" class="form-control mb-1" placeholder="Tiêu đề bài học" required>
+        <textarea name="lesson_content" class="form-control" placeholder="Nội dung bài học"></textarea>
+    `;
+    container.appendChild(lessonDiv);
+}
+</script>
+{% endblock %}

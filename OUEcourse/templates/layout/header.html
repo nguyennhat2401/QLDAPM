@@ -12,18 +12,20 @@
 
                 {% if current_user.is_authenticated %}
                 <li class="nav-item">
-                    <a class="nav-link text-danger" href="/">
+                    <a class="nav-link text-danger" href="/profile">
+                         {{ current_user.balance }} VND
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-danger" href="/profile">
                         <img src="{{ current_user.avatar }}" width="25" class="rounded-circle" />
                         Chào {{ current_user.username }}.
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link text-success" href="/logout">Đăng xuất</a>
-                </li>
-                 <li class="nav-item">
-                        <a class="nav-link text-success" href="/admin">ADMIN</a>
-                 </li>
 
+                </li>>
                 {% if current_user.user_role=='User.ADMIN' %}
                      <li class="nav-item">
                         <a class="nav-link text-success" href="/admin">ADMIN</a>

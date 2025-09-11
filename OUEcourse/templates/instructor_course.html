@@ -1,0 +1,24 @@
+{% extends 'layout/base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h3>Các khóa học do bạn giảng dạy</h3>
+
+    <a href="/instructor/add-course" class="btn btn-primary mb-3">Thêm khóa học</a>
+
+    {% if courses %}
+        <ul class="list-group">
+            {% for course in courses %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                {{ course.title }}
+                <form action="/instructor/delete-course/{{course.id}}" method="post" onsubmit="return confirm('Bạn chắc chắn muốn xóa?')">
+                    <button class="btn btn-danger btn-sm">Xóa</button>
+                </form>
+               <a href="/instructor/edit-course/{{course.id}}" class="btn btn-warning btn-sm">Chỉnh sửa</a>
+            </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="text-muted">Bạn chưa tạo khóa học nào.</p>
+    {% endif %}
+</div>
+{% endblock %}

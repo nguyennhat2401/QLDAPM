@@ -1,0 +1,66 @@
+{% extends 'layout/base.html' %}
+{% block content %}
+<div class="container mt-4">
+    {% if current_user.is_authenticated %}
+    <div class="row">
+        <!-- Chi tiết người dùng -->
+        <div class="col-md-4 mb-3">
+            <div class="card shadow-sm">
+                <div class="card-header text-danger fw-bold">Chi tiết người dùng</div>
+                <div class="card-body">
+                    <p><b>Họ và tên:</b><br>{{ current_user.fullName }}</p>
+                    <p><b>Địa chỉ thư điện tử:</b><br>{{ current_user.email }}</p>
+                    <p><b>Số dư:</b><br>{{ "{:,.0f}".format(current_user.balance) }} VND</p>
+                    <a href="/edit-profile" class="btn btn-outline-primary mt-2">Sửa hồ sơ cá nhân</a>
+                </div>
+            </div>
+        </div>
+
+        {% if current_user.role.name == "INSTRUCTOR" %}
+        <div class="col-md-4 mb-3">
+            <div class="card shadow-sm">
+                <div class="card-header text-danger fw-bold">Chi tiết khóa học</div>
+                <div class="card-body">
+
+                    {% if teaching_courses %}
+                        <ul class="list-unstyled mt-3">
+                            <b>Các khóa học đang giảng dạy:</b>
+                            {% for course in teaching_courses %}
+                            <li>{{ course.title }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">Bạn chưa tạo khóa học nào.</p>
+                    {% endif %}
+                </div>
+                <a href="/instructor/courses" class="btn btn-outline-primary mt-2">Quản lý khóa học</a>
+            </div>
+        </div>
+        {% endif %}
+
+
+        {% if current_user.role.name == "STUDENT" %}
+        <div class="col-md-4 mb-3">
+            <div class="card shadow-sm">
+                <div class="card-header text-danger fw-bold">Chi tiết khóa học</div>
+                <div class="card-body">
+                    {% if user_courses %}
+                        <ul class="list-unstyled">
+                            <b>Các khóa học đang tham gia:</b>
+                            {% for course in user_courses %}
+                            <li>
+                                <a href="/course/{{course.id}}">{{ course.title }}</a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">Bạn chưa đăng ký khóa học nào.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

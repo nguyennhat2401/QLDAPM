@@ -52,7 +52,7 @@ class Course(db.Model):
 
     instructor_id = db.Column(db.BigInteger, db.ForeignKey("users.id"))
 
-    lessons = db.relationship("Lesson", backref="course", lazy=True)
+    lessons = db.relationship("Lesson", backref="course", lazy=True, cascade="all, delete-orphan")
     enrollments = db.relationship("Enrollment", backref="course", lazy=True)
     questions = db.relationship("Question", backref="course", lazy=True)
 
