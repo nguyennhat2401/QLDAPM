@@ -1,42 +1,55 @@
 {% extends "layout/base.html" %}
 {% block content %}
-<div class="container-fluid mt-3">
-    <div class="row">
+<div class="container-fluid mt-4">
+    <div class="row g-3">
         <!-- Sidebar: Danh sách bài học -->
-        <div class="col-md-3 col-12 bg-light p-2" style="min-height: 100vh;">
-            <h5 class="mb-3">{{ course.title }}</h5>
-            <div class="accordion" id="lessonAccordion">
-                {% for lesson in lessons %}
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="heading{{ lesson.id }}">
-                        <button class="accordion-button collapsed" type="button"
-                            data-bs-toggle="collapse"
-                            data-bs-target="#collapse{{ lesson.id }}"
-                            aria-expanded="false"
-                            aria-controls="collapse{{ lesson.id }}">
-                            {{ loop.index }}. {{ lesson.title }}
-                        </button>
-                    </h2>
-                    <div id="collapse{{ lesson.id }}" class="accordion-collapse collapse"
-                        aria-labelledby="heading{{ lesson.id }}"
-                        data-bs-parent="#lessonAccordion">
-                        <div class="accordion-body">
-                            <a href="{{ url_for('course_detail', course_id=course.id, lesson_id=lesson.id) }}" class="btn btn-sm btn-outline-primary w-100">Xem bài học</a>
+        <div class="col-md-3 col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white fw-bold">
+                    {{ course.title }}
+                </div>
+                <div class="card-body p-0">
+                    <div class="accordion" id="lessonAccordion">
+                        {% for lesson in lessons %}
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="heading{{ lesson.id }}">
+                                <button class="accordion-button collapsed" type="button"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#collapse{{ lesson.id }}"
+                                        aria-expanded="false"
+                                        aria-controls="collapse{{ lesson.id }}">
+                                    {{ loop.index }}. {{ lesson.title }}
+                                </button>
+                            </h2>
+                            <div id="collapse{{ lesson.id }}" class="accordion-collapse collapse"
+                                 aria-labelledby="heading{{ lesson.id }}"
+                                 data-bs-parent="#lessonAccordion">
+                                <div class="accordion-body p-2">
+                                    <a href="{{ url_for('course_detail', course_id=course.id, lesson_id=lesson.id) }}"
+                                       class="btn btn-sm btn-outline-primary w-100">
+                                        Xem bài học
+                                    </a>
+                                </div>
+                            </div>
                         </div>
+                        {% endfor %}
                     </div>
                 </div>
-                {% endfor %}
             </div>
         </div>
 
         <!-- Main content: Hiển thị nội dung bài học -->
-        <div class="col-md-9 col-12 p-3">
-            {% if selected_lesson %}
-            <h4>{{ selected_lesson.title }}</h4>
-            <p>{{ selected_lesson.content }}</p>
-            {% else %}
-            <p>Chọn bài học để xem nội dung.</p>
-            {% endif %}
+        <div class="col-md-9 col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    {% if selected_lesson %}
+                        <h4 class="fw-bold text-primary mb-3">{{ selected_lesson.title }}</h4>
+                        <p class="lh-lg">{{ selected_lesson.content }}</p>
+                    {% else %}
+                        <p class="text-muted">Chọn bài học để xem nội dung.</p>
+                    {% endif %}
+                </div>
+            </div>
         </div>
     </div>
 </div>

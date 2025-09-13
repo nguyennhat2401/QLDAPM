@@ -1,0 +1,17 @@
+body {
+  font-family: 'Inter', sans-serif;
+}
+
+.card img {
+  height: 180px;
+  object-fit: cover;
+}
+
+.btn-primary {
+  background-color: #0d6efd;
+  border: none;
+}
+
+.btn-primary:hover {
+  background-color: #0b5ed7;
+}

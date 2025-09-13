@@ -1,51 +1,56 @@
-<nav class="navbar navbar-expand-sm bg-dark navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="/">ECOURSE</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#collapsibleNavbar">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+    <div class="container">
+        <!-- Logo -->
+        <a class="navbar-brand fw-bold" href="/">ECOURSE</a>
+
+        <!-- Nút toggle khi màn hình nhỏ -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
             <span class="navbar-toggler-icon"></span>
         </button>
-        <div class="collapse navbar-collapse" id="collapsibleNavbar">
-            <ul class="navbar-nav me-auto">
+
+        <!-- Menu chính -->
+        <div class="collapse navbar-collapse" id="mainNavbar">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
                     <a class="nav-link" href="/">Trang chủ</a>
                 </li>
+            </ul>
 
+            <!-- Thanh tìm kiếm -->
+            <form method="get" action="/" class="d-flex me-3">
+                <input class="form-control me-2" type="text" name="kw" placeholder="Tìm khóa học">
+                <button class="btn btn-outline-light" type="submit">Tìm</button>
+            </form>
+
+            <!-- User menu -->
+            <ul class="navbar-nav">
                 {% if current_user.is_authenticated %}
-                <li class="nav-item">
-                    <a class="nav-link text-danger" href="/profile">
-                         {{ current_user.balance }} VND
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-danger" href="/profile">
-                        <img src="{{ current_user.avatar }}" width="25" class="rounded-circle" />
-                        Chào {{ current_user.username }}.
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-success" href="/logout">Đăng xuất</a>
-
-                </li>>
-                {% if current_user.user_role=='User.ADMIN' %}
-                     <li class="nav-item">
-                        <a class="nav-link text-success" href="/admin">ADMIN</a>
+                    <li class="nav-item">
+                        <a class="nav-link text-warning" href="/profile">{{ current_user.balance }} VND</a>
+                    </li>
+                    <li class="nav-item d-flex align-items-center">
+                        <a class="nav-link text-light d-flex align-items-center" href="/profile">
+                            <img src="{{ current_user.avatar }}" width="28" class="rounded-circle me-1" />
+                            Chào {{ current_user.username }}
+                        </a>
+                    </li>
+                    {% if current_user.user_role == 'User.ADMIN' %}
+                        <li class="nav-item">
+                            <a class="nav-link text-info" href="/admin">ADMIN</a>
+                        </li>
+                    {% endif %}
+                    <li class="nav-item">
+                        <a class="btn btn-sm btn-danger ms-2" href="/logout">Đăng xuất</a>
+                    </li>
+                {% else %}
+                    <li class="nav-item">
+                        <a class="btn btn-sm btn-light me-2" href="/login">Đăng nhập</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-sm btn-success" href="/register">Đăng ký</a>
                     </li>
                 {% endif %}
-                {% else %}
-                <li class="nav-item">
-                    <a class="nav-link text-danger" href="/login">Đăng nhập</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-success" href="/register">Đăng ký</a>
-                </li>
-                {% endif %}
-
             </ul>
-            <form method="get" action="/" class="d-flex">
-                <input class="form-control me-2" type="text" name="kw" placeholder="Tìm khóa học">
-                <button class="btn btn-primary" type="submit">Tìm</button>
-            </form>
         </div>
     </div>
 </nav>
-
