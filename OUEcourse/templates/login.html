@@ -31,4 +31,11 @@
         </div>
     </div>
 </div>
+
+{% if err_msg %}
+<script>
+    alert("{{ err_msg }}");
+</script>
+{% endif %}
+
 {% endblock %}
