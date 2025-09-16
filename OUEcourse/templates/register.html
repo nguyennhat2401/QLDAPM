@@ -3,6 +3,9 @@
 {% block content %}
 
 <h1 class="text-center text-danger mt-1">ĐĂNG KÝ</h1>
+{% if err_msg %}
+<div class="alert alert-danger text-center">{{ err_msg }}</div>
+{% endif %}
 
 <form method="post" action="/register" enctype="multipart/form-data">
 

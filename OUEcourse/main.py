@@ -235,11 +235,16 @@ def register_process():
 
         if password != confirm:
             err_msg = "Mật khẩu không khớp!"
+        elif dao.get_user_by_email(email):  # thêm hàm get_user_by_email trong dao
+            err_msg = "Email đã tồn tại!"
+        elif dao.get_user_by_username(username):
+            err_msg = "Tên đăng nhập đã tồn tại!"
         else:
-            dao.add_user(username=username, password=password,
-                         email=email, fullname=fullname, role=role,
-                         evidence_file=evidence_file)
-            return redirect('/login')
+            try:
+                dao.add_user(username, password, email, fullname, role, evidence_file)
+                return redirect('/login')
+            except ValueError as e:
+                err_msg = str(e)
 
     return render_template('register.html', err_msg=err_msg)
 

@@ -16,6 +16,7 @@ UPLOAD_FOLDER = "static/evidence"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 def add_user(username, password, email, fullname, role, evidence_file=None):
+
     password = hashlib.md5(password.encode('utf-8')).hexdigest()
     is_approved = True
     evidence_path = None
@@ -74,3 +75,8 @@ def get_lesson_by_course_id(course_id):
 
     lessons = Lesson.query.filter_by(course_id=course_id).all()
     return lessons
+def get_user_by_email(email):
+    return User.query.filter_by(email=email).first()
+
+def get_user_by_username(username):
+    return User.query.filter_by(username=username).first()

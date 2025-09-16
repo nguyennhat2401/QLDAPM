@@ -20,7 +20,11 @@
                 <p class="card-text">{{ c.description }}</p>
                 <p class="card-text">Giảng viên: {{ c.instructor.fullName }}</p>
                 <p class="card-text">{{ c.price }} VND</p>
-                <a href="/" class="btn btn-primary">Đăng ký</a>
+                {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('course_detail', course_id=c.id) }}" class="btn btn-primary">Đăng ký</a>
+                {% else %}
+                    <a href="{{ url_for('login_process', next=url_for('course_detail', course_id=c.id)) }}" class="btn btn-primary">Đăng ký</a>
+                {% endif %}
             </div>
         </div>
     </div>
