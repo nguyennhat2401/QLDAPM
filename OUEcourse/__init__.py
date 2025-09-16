@@ -1,3 +1,5 @@
+import os
+
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
@@ -13,3 +15,8 @@ app.config['PAGE_SIZE']=4
 
 db=SQLAlchemy(app=app)
 Login=LoginManager(app=app)
+
+UPLOAD_FOLDER = os.path.join(os.getcwd(), "static", "evidence")
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER

@@ -16,18 +16,22 @@ UPLOAD_FOLDER = "static/evidence"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 def add_user(username, password, email, fullname, role, evidence_file=None):
-
     password = hashlib.md5(password.encode('utf-8')).hexdigest()
     is_approved = True
     evidence_path = None
 
+    # Nếu là Instructor thì phải upload file và chờ duyệt
     if role == "INSTRUCTOR":
-        is_approved = False
-        if evidence_file:
+        is_approved = False  # Mặc định chờ duyệt
+
+        if evidence_file and evidence_file.filename.strip():
             filename = secure_filename(evidence_file.filename)
             evidence_path = os.path.join(UPLOAD_FOLDER, filename)
             evidence_file.save(evidence_path)
+        else:
+            raise ValueError("Instructor phải upload minh chứng!")
 
+    # Tạo user mới
     u = User(username=username,
              password=password,
              email=email,
@@ -40,11 +44,13 @@ def add_user(username, password, email, fullname, role, evidence_file=None):
     db.session.add(u)
     db.session.commit()
 
+    return u
+
 def load_course(id=None,coure_id=None,kw=None,page=1):
     query=Course.query
 
     if kw:
-        return query.filter(Course.name.contains(kw))
+        return query.filter(Course.title.contains(kw))
     if id:
         return query.get(id)
 

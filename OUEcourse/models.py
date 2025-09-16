@@ -32,7 +32,7 @@ class User(UserMixin, db.Model):
     role = db.Column(db.Enum(UserRole), default=UserRole.STUDENT)
     balance = db.Column(db.Float, default=0)
     evidence = db.Column(db.String(255))
-    is_approved = db.Column(db.Boolean, default=True)
+    is_approved = db.Column(db.Boolean, default=False)
 
     courses = db.relationship("Course", backref="instructor", lazy=True)
     enrollments = db.relationship("Enrollment", backref="student", lazy=True)

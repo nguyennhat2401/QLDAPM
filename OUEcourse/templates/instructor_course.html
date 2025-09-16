@@ -1,24 +1,33 @@
 {% extends 'layout/base.html' %}
 {% block content %}
-<div class="container mt-4">
-    <h3>Các khóa học do bạn giảng dạy</h3>
+<div class="container mt-5">
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Các khóa học do bạn giảng dạy</h5>
+            <a href="/instructor/add-course" class="btn btn-light btn-sm">+ Thêm khóa học</a>
+        </div>
+        <div class="card-body">
 
-    <a href="/instructor/add-course" class="btn btn-primary mb-3">Thêm khóa học</a>
+            {% if courses %}
+                <ul class="list-group list-group-flush">
+                    {% for course in courses %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span class="fw-bold text-primary">{{ course.title }}</span>
+                        <div class="btn-group">
+                            <a href="/instructor/edit-course/{{course.id}}" class="btn btn-warning btn-sm">Chỉnh sửa</a>
+                            <form action="/instructor/delete-course/{{course.id}}" method="post"
+                                  onsubmit="return confirm('Bạn chắc chắn muốn xóa?')">
+                                <button class="btn btn-danger btn-sm ms-2">Xóa</button>
+                            </form>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-muted text-center mb-0 mt-3">Bạn chưa tạo khóa học nào.</p>
+            {% endif %}
 
-    {% if courses %}
-        <ul class="list-group">
-            {% for course in courses %}
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                {{ course.title }}
-                <form action="/instructor/delete-course/{{course.id}}" method="post" onsubmit="return confirm('Bạn chắc chắn muốn xóa?')">
-                    <button class="btn btn-danger btn-sm">Xóa</button>
-                </form>
-               <a href="/instructor/edit-course/{{course.id}}" class="btn btn-warning btn-sm">Chỉnh sửa</a>
-            </li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p class="text-muted">Bạn chưa tạo khóa học nào.</p>
-    {% endif %}
+        </div>
+    </div>
 </div>
 {% endblock %}

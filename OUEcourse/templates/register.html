@@ -6,52 +6,63 @@
 {% if err_msg %}
 <div class="alert alert-danger text-center">{{ err_msg }}</div>
 {% endif %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-header bg-danger text-white text-center fw-bold">
+                    ĐĂNG KÝ TÀI KHOẢN
+                </div>
+                <div class="card-body p-4">
 
-<form method="post" action="/register" enctype="multipart/form-data">
+                    <form method="post" action="/register" enctype="multipart/form-data">
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control" id="username" placeholder="Tên đăng nhập" name="username" required>
+                            <label for="username">Tên đăng nhập</label>
+                        </div>
 
-    <div class="form-floating mb-3 mt-3">
-        <input type="text" class="form-control" id="username" placeholder="Tên đăng nhập" name="username" />
-        <label for="username">Tên đăng nhập</label>
+                        <div class="form-floating mb-3">
+                            <input type="password" class="form-control" id="password" placeholder="Mật khẩu" name="password" required>
+                            <label for="password">Mật khẩu</label>
+                        </div>
+
+                        <div class="form-floating mb-3">
+                            <input type="password" class="form-control" id="confirm" placeholder="Xác nhận mật khẩu" name="confirm" required>
+                            <label for="confirm">Xác nhận Mật khẩu</label>
+                        </div>
+
+                        <div class="form-floating mb-3">
+                            <input type="email" class="form-control" id="email" placeholder="Email" name="email" required>
+                            <label for="email">Email</label>
+                        </div>
+
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control" id="fullname" placeholder="Họ và tên" name="fullname" required>
+                            <label for="fullname">Họ và tên</label>
+                        </div>
+
+                        <div class="form-floating mb-3">
+                            <select class="form-select" id="role" name="role" required>
+                                <option value="STUDENT">Học viên</option>
+                                <option value="INSTRUCTOR">Giảng viên</option>
+                            </select>
+                            <label for="role">Vai trò</label>
+                        </div>
+
+                        <div id="evidenceDiv" class="mb-3" style="display:none;">
+                            <label class="form-label">Minh chứng (PDF/JPG/PNG)</label>
+                            <input type="file" class="form-control" id="evidence" name="evidence" accept=".pdf,.jpg,.png">
+                        </div>
+
+                        <button class="btn btn-danger w-100 mt-2">Đăng ký</button>
+                    </form>
+
+                </div>
+            </div>
+        </div>
     </div>
+</div>
 
-    <div class="form-floating mt-3 mb-3">
-        <input type="password" class="form-control" id="password" placeholder="Mật khẩu" name="password">
-        <label for="password">Mật khẩu</label>
-    </div>
-
-    <div class="form-floating mt-3 mb-3">
-        <input type="password" class="form-control" id="confirm" placeholder="Xác nhận mật khẩu" name="confirm">
-        <label for="confirm">Xác nhận Mật khẩu</label>
-    </div>
-
-    <div class="form-floating mb-3 mt-3">
-        <input type="text" class="form-control" id="email" placeholder="Email" name="email" />
-        <label for="username">Email</label>
-    </div>
-
-    <div class="form-floating mb-3 mt-3">
-        <input type="text" class="form-control" id="fullname" placeholder="Họ và tên" name="fullname" />
-        <label for="username">Họ và tên</label>
-    </div>
-
-     <div class="form-floating mb-3 mt-3">
-        <select class="form-control" id="role" name="role" required>
-            <option value="STUDENT">Học viên</option>
-            <option value="INSTRUCTOR">Giảng viên</option>
-        </select>
-        <label for="role">Vai trò</label>
-    </div>
-
-
-    <div id="evidenceDiv" class="form-floating mb-3 mt-3" style="display:none;">
-        <input type="file" class="form-control" id="evidence" name="evidence" accept=".pdf,.jpg,.png">
-        <label for="evidence">Minh chứng (PDF/JPG/PNG)</label>
-    </div>
-
-    <div class="form-floating mt-3 mb-3">
-        <button class="btn btn-danger">Đăng ký</button>
-    </div>
-</form>
 <script>
     function toggleEvidence() {
         let role = document.getElementById("role").value;
@@ -60,8 +71,6 @@
     }
 
     document.getElementById("role").addEventListener("change", toggleEvidence);
-
     window.onload = toggleEvidence;
 </script>
 {% endblock %}
-

@@ -5,7 +5,7 @@ from flask_login import login_user, logout_user, current_user
 
 import dao
 from __init__ import app, Login, db
-from dao import load_course, count_course
+from dao import load_course, count_course, UPLOAD_FOLDER
 from decorators import annonymous_user
 from models import Enrollment, Course, Lesson, UserRole
 
@@ -202,18 +202,29 @@ def delete_lesson(lesson_id, course_id):
     return redirect(f"/instructor/edit-course/{course_id}")
 
 
-@app.route("/login", methods=['get','post'])
+@app.route("/login", methods=['GET', 'POST'])
 @annonymous_user
 def login_process():
-    if request.method.__eq__('POST'):
-        username=request.form.get('username')
-        password=request.form.get('password')
-        u=dao.auth_user(username=username, password=password)
+    err_msg = None
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+
+        u = dao.auth_user(username=username, password=password)
+
         if u:
-            login_user(u)
-            next = request.args.get('next')
-            return redirect(next if next else '/')
-    return render_template('login.html')
+            if not u.is_approved:
+                err_msg = "Tài khoản của bạn đang chờ duyệt. Vui lòng quay lại sau!"
+            else:
+                login_user(u)
+                next_page = request.args.get('next')
+                return redirect(next_page if next_page else '/')
+        else:
+            err_msg = "Sai tên đăng nhập hoặc mật khẩu!"
+
+    return render_template('login.html', err_msg=err_msg)
+
+
 
 @app.route("/logout")
 def logout_process():
@@ -241,7 +252,9 @@ def register_process():
             err_msg = "Tên đăng nhập đã tồn tại!"
         else:
             try:
-                dao.add_user(username, password, email, fullname, role, evidence_file)
+                dao.add_user(username=username, password=password,
+                             email=email, fullname=fullname, role=role,
+                             evidence_file=evidence_file)
                 return redirect('/login')
             except ValueError as e:
                 err_msg = str(e)
