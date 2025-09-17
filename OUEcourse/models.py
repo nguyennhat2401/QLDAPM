@@ -94,6 +94,7 @@ class Payment(db.Model):
     paymentDate = db.Column(db.DateTime, default=datetime.utcnow)
     status = db.Column(db.Enum(PaymentStatus), default=PaymentStatus.PENDING)
 
+    proof = db.Column(db.String(255))
     enrollment_id = db.Column(db.BigInteger, db.ForeignKey("enrollments.id"))
 
 # -------------------

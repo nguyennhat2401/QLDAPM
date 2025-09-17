@@ -1,13 +1,15 @@
 import math
 
-from flask import render_template, request, redirect, flash
-from flask_login import login_user, logout_user, current_user
-
+from flask import render_template, request, redirect, flash, url_for
+from flask_login import login_user, logout_user, current_user, login_required
+import os
 import dao
 from __init__ import app, Login, db
 from dao import load_course, count_course, UPLOAD_FOLDER
 from decorators import annonymous_user
-from models import Enrollment, Course, Lesson, UserRole
+from models import (Enrollment, Course,
+                    Lesson, UserRole, Payment, PaymentStatus)
+from werkzeug.utils import secure_filename
 
 
 @Login.user_loader
@@ -260,7 +262,77 @@ def register_process():
                 err_msg = str(e)
 
     return render_template('register.html', err_msg=err_msg)
+@app.route("/courses/<int:course_id>/open")
+def open_course(course_id):
+    if not current_user.is_authenticated:
+        return redirect(url_for('login_process', next=url_for('open_course', course_id=course_id)))
+
+    course = Course.query.get_or_404(course_id)
+
+    enrolled = Enrollment.query.filter_by(student_id=current_user.id, course_id=course_id).first()
+    if enrolled:
+        return redirect(url_for('course_detail', course_id=course_id))
+
+    if (course.price or 0) == 0:
+        e = Enrollment(student_id=current_user.id, course_id=course.id)
+        db.session.add(e)
+        db.session.commit()
+        return redirect(url_for('course_detail', course_id=course_id))
+
+    return redirect(url_for('checkout', course_id=course_id))
+ALLOWED_PROOF_EXTS = {"png", "jpg", "jpeg", "pdf"}
+
+def allowed_file(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_PROOF_EXTS
+
+@app.route("/checkout/<int:course_id>", methods=["GET", "POST"])
+@login_required
+def checkout(course_id):
+    course = Course.query.get_or_404(course_id)
+
+    # nếu đã enroll thì vào luôn
+    existed = Enrollment.query.filter_by(student_id=current_user.id,
+                                         course_id=course_id).first()
+    if existed:
+        return redirect(url_for('course_detail', course_id=course_id))
+
+    if request.method == "POST":
+        proof_file = request.files.get("proof")
+        proof_path = None
+
+        if proof_file and proof_file.filename and allowed_file(proof_file.filename):
+            os.makedirs(app.config["PAYMENT_UPLOAD_FOLDER"], exist_ok=True)
+            fname = secure_filename(proof_file.filename)
+            save_path = os.path.join(app.config["PAYMENT_UPLOAD_FOLDER"], fname)
+            proof_file.save(save_path)
+            proof_path = save_path
+
+        # Tạo enrollment (chưa học được cho đến khi duyệt, tuỳ bạn)
+        enroll = Enrollment(student_id=current_user.id, course_id=course.id)
+        db.session.add(enroll)
+        db.session.flush()  # có enroll.id cho payment
+
+        pay = Payment(
+            amount=course.price or 0,
+            status=PaymentStatus.PENDING,
+            enrollment_id=enroll.id,
+            proof=proof_path  # nếu bạn đã thêm cột proof
+        )
+        db.session.add(pay)
+        db.session.commit()
+
+        flash("Đã gửi xác nhận thanh toán. Vui lòng chờ duyệt!", "success")
+        return redirect(url_for('profile'))
+
+    # Số tài khoản: bạn có thể hard-code hoặc lấy từ config/db
+    bank_info = {
+        "bank": "Vietcombank",
+        "account_name": "CONG TY ECourse",
+        "account_number": "0123456789",
+        "note_format": f"EC-{current_user.id}-{course_id}"
+    }
+    return render_template("checkout.html", course=course, bank_info=bank_info)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
-

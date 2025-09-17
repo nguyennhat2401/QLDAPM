@@ -1,0 +1,36 @@
+{% extends 'layout/base.html' %}
+{% block content %}
+<div class="container mt-4" style="max-width: 720px;">
+  <h3 class="mb-3">Thanh toán khóa học</h3>
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <h5 class="card-title">{{ course.title }}</h5>
+      <p class="card-text text-muted">{{ course.description }}</p>
+      <p class="mb-1"><b>Giảng viên:</b> {{ course.instructor.fullName }}</p>
+      <p class="mb-0"><b>Giá:</b> {{ "{:,.0f}".format(course.price or 0) }} VND</p>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <h5 class="card-title">Thông tin chuyển khoản</h5>
+      <p class="mb-1"><b>Ngân hàng:</b> {{ bank_info.bank }}</p>
+      <p class="mb-1"><b>Chủ tài khoản:</b> {{ bank_info.account_name }}</p>
+      <p class="mb-1"><b>Số tài khoản:</b> <span class="text-primary">{{ bank_info.account_number }}</span></p>
+      <p class="mb-0">
+        <b>Nội dung CK (bắt buộc):</b>
+        <code>{{ bank_info.note_format }}</code>
+      </p>
+    </div>
+  </div>
+
+  <form method="POST" enctype="multipart/form-data" class="card p-3">
+    <label class="form-label"><b>Tải lên biên lai / hoá đơn chuyển khoản (PNG/JPG/PDF)</b></label>
+    <input class="form-control mb-3" type="file" name="proof" accept=".png,.jpg,.jpeg,.pdf" />
+
+    <button class="btn btn-success">Xác nhận đã thanh toán</button>
+    <a href="{{ url_for('open_course', course_id=course.id) }}" class="btn btn-outline-secondary ms-2">Quay lại</a>
+  </form>
+</div>
+{% endblock %}

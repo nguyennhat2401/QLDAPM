@@ -20,3 +20,4 @@ UPLOAD_FOLDER = os.path.join(os.getcwd(), "static", "evidence")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+app.config["PAYMENT_UPLOAD_FOLDER"] = "static/payments"
