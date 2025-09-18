@@ -1,0 +1,18 @@
+{% extends 'layout/base.html' %}
+{% block content %}
+<div class="container-fluid mt-3">
+  <h4>Người dùng</h4>
+  <table class="table table-sm">
+    <thead><tr><th>ID</th><th>Username</th><th>Email</th><th>Role</th><th>Approved</th><th>Balance</th></tr></thead>
+    <tbody>
+      {% for u in users %}
+      <tr>
+        <td>{{ u.id }}</td><td>{{ u.username }}</td><td>{{ u.email }}</td>
+        <td>{{ u.role.name }}</td><td>{{ u.is_approved }}</td>
+        <td>{{ "{:,.0f}".format(u.balance or 0) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

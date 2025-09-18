@@ -1,7 +1,16 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
     <div class="container">
         <!-- Logo -->
-        <a class="navbar-brand fw-bold" href="/">ECOURSE</a>
+
+        {% if current_user.is_authenticated %}
+          <span>
+            {% if current_user.role.name != 'ADMIN' %}
+              <a class="navbar-brand fw-bold" href="/">ECOURSE</a>
+            {% else %}
+              <a class="navbar-brand fw-bold" href="{{ url_for('admin_dashboard') }}">ECOURSE</a>
+            {% endif %}
+          </span>
+        {% endif %}
 
         <!-- Nút toggle khi màn hình nhỏ -->
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
@@ -12,7 +21,15 @@
         <div class="collapse navbar-collapse" id="mainNavbar">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
-                    <a class="nav-link" href="/">Trang chủ</a>
+                    {% if current_user.is_authenticated %}
+                      <span>
+                        {% if current_user.role.name != 'ADMIN' %}
+                          <a class="nav-link" href="/">Trang chủ</a>
+                        {% else %}
+                          <a class="nav-link" href="{{ url_for('admin_dashboard') }}">Trang chủ</a>
+                        {% endif %}
+                      </span>
+                    {% endif %}
                 </li>
             </ul>
 
@@ -35,15 +52,21 @@
                     </li>
 
                     <li class="nav-item d-flex align-items-center">
-                        <a class="nav-link text-light d-flex align-items-center" href="/profile">
-                            Chào {{ current_user.username }}
-                        </a>
+                        {% if current_user.is_authenticated %}
+                          <span>
+                            {% if current_user.role.name != 'ADMIN' %}
+                              Chào {{ current_user.username }}
+                              <a href="{{ url_for('profile') }}" class="ms-1">Profile</a>
+
+                            {% endif %}
+                          </span>
+                        {% endif %}
                     </li>
 
                     {# nếu có quyền admin thì giữ nguyên #}
-                    {% if current_user.user_role == 'User.ADMIN' %}
+                    {% if current_user.role.name == 'ADMIN' %}
                     <li class="nav-item">
-                        <a class="nav-link text-info" href="/admin">ADMIN</a>
+                        <a class="nav-link text-info" href="{{ url_for('admin_dashboard') }}">ADMIN</a>
                     </li>
                     {% endif %}
 

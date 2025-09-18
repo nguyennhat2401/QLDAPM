@@ -1,0 +1,23 @@
+{% extends 'layout/base.html' %}
+{% block content %}
+<div class="container-fluid mt-3">
+  <h4>Giảng viên chờ duyệt</h4>
+  <table class="table table-sm">
+    <thead><tr><th>ID</th><th>Username</th><th>Họ tên</th><th>Email</th><th>Minh chứng</th><th>Hành động</th></tr></thead>
+    <tbody>
+    {% for i in instructors %}
+      <tr>
+        <td>{{ i.id }}</td><td>{{ i.username }}</td><td>{{ i.fullName }}</td><td>{{ i.email }}</td>
+        <td>
+          {% if i.evidence %}<a href="/{{ i.evidence }}" target="_blank">Xem</a>{% else %}—{% endif %}
+        </td>
+        <td class="d-flex gap-2">
+          <form method="post" action="{{ url_for('admin_approve_instructor', user_id=i.id) }}"><button class="btn btn-sm btn-success">Duyệt</button></form>
+          <form method="post" action="{{ url_for('admin_reject_instructor', user_id=i.id) }}"><button class="btn btn-sm btn-outline-danger">Từ chối</button></form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

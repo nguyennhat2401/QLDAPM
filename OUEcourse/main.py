@@ -1,15 +1,16 @@
 import math
-from datetime import datetime
-
-from flask import render_template, request, redirect, flash, url_for
+from datetime import datetime, date
+from sqlalchemy import func, extract
+from calendar import monthrange
+from flask import render_template, request, redirect, flash, url_for, abort
 from flask_login import login_user, logout_user, current_user, login_required
 import os
 import dao
 from __init__ import app, Login, db
 from dao import load_course, count_course, UPLOAD_FOLDER
-from decorators import annonymous_user
+from decorators import annonymous_user, admin_required
 from models import (Enrollment, Course,
-                    Lesson, UserRole, Payment, PaymentStatus)
+                    Lesson, UserRole, Payment, PaymentStatus, User)
 from werkzeug.utils import secure_filename
 
 
@@ -235,6 +236,8 @@ def login_process():
                 err_msg = "Tài khoản của bạn đang chờ duyệt. Vui lòng quay lại sau!"
             else:
                 login_user(u)
+                if u.role == UserRole.ADMIN:
+                    return redirect(url_for('admin_dashboard'))
                 next_page = request.args.get('next')
                 return redirect(next_page if next_page else '/')
         else:
@@ -368,6 +371,184 @@ def topup():
         "note_format": f"TOPUP-{current_user.id}-<timestamp>"
     }
     return render_template("topup.html", bank_info=bank_info)
+
+
+
+# ========= DASHBOARD =========
+@app.route("/admin")
+@admin_required
+def admin_dashboard():
+    # số liệu
+    total_users = User.query.count()
+    total_courses = Course.query.count()
+    revenue = db.session.query(func.coalesce(func.sum(Payment.amount), 0.0))\
+        .filter(Payment.status == PaymentStatus.SUCCESS,
+                Payment.enrollment_id.isnot(None)).scalar()
+
+    # biểu đồ nạp tiền theo ngày trong tháng hiện tại (chỉ topup đã duyệt)
+    today = date.today()
+    y, m = today.year, today.month
+    days_in_month = monthrange(y, m)[1]
+
+    # group theo ngày
+    rows = db.session.query(
+                func.date(Payment.paymentDate).label("d"),
+                func.coalesce(func.sum(Payment.amount), 0.0)
+            ).filter(
+                Payment.user_id.isnot(None),           # là topup
+                Payment.enrollment_id.is_(None),
+                Payment.status == PaymentStatus.SUCCESS,
+                extract('year', Payment.paymentDate) == y,
+                extract('month', Payment.paymentDate) == m
+            ).group_by(func.date(Payment.paymentDate))\
+             .order_by(func.date(Payment.paymentDate)).all()
+
+    # map ra mảng theo 1..days_in_month
+    daily = { int(str(r[0])[-2:]): float(r[1]) for r in rows }  # key: day
+    chart_labels = [str(i) for i in range(1, days_in_month+1)]
+    chart_values = [daily.get(i, 0) for i in range(1, days_in_month+1)]
+
+    return render_template("admin/dashboard.html",
+                           total_users=total_users,
+                           total_courses=total_courses,
+                           revenue=revenue,
+                           chart_labels=chart_labels,
+                           chart_values=chart_values)
+
+# ========= LIST INSTRUCTORS =========
+@app.route("/admin/instructors")
+@admin_required
+def admin_instructors():
+    instructors = User.query.filter(User.role == UserRole.INSTRUCTOR)\
+                            .order_by(User.id.desc()).all()
+    return render_template("admin/instructors.html", instructors=instructors)
+
+
+# ========= APPROVALS (2 tab con) =========
+@app.route("/admin/approvals")
+@admin_required
+def admin_approvals():
+    pending_instructors = User.query.filter(
+        User.role == UserRole.INSTRUCTOR, User.is_approved == False
+    ).order_by(User.id.desc()).all()
+
+    pending_topups = Payment.query.filter(
+        Payment.user_id.isnot(None),
+        Payment.enrollment_id.is_(None),
+        Payment.status == PaymentStatus.PENDING
+    ).order_by(Payment.paymentDate.desc()).all()
+
+    return render_template("admin/approvals.html",
+                           pending_instructors=pending_instructors,
+                           pending_topups=pending_topups)
+@app.route("/admin/instructors/pending")
+@admin_required
+def admin_instructors_pending():
+    instructors = User.query.filter(
+        User.role == UserRole.INSTRUCTOR, User.is_approved == False
+    ).order_by(User.id.desc()).all()
+    return render_template("admin/instructors_pending.html", instructors=instructors)
+
+@app.route("/admin/instructors/<int:user_id>/approve", methods=["POST"])
+@admin_required
+def admin_approve_instructor(user_id):
+    u = User.query.get_or_404(user_id)
+    if u.role != UserRole.INSTRUCTOR:
+        abort(400)
+    u.is_approved = True
+    db.session.commit()
+    flash("Đã duyệt giảng viên.", "success")
+    return redirect(url_for("admin_instructors_pending"))
+
+@app.route("/admin/instructors/<int:user_id>/reject", methods=["POST"])
+@admin_required
+def admin_reject_instructor(user_id):
+    u = User.query.get_or_404(user_id)
+    if u.role != UserRole.INSTRUCTOR:
+        abort(400)
+    u.is_approved = False
+    db.session.commit()
+    flash("Đã cập nhật trạng thái (từ chối).", "warning")
+    return redirect(url_for("admin_instructors_pending"))
+
+# ========================
+# ADMIN: Courses
+# ========================
+@app.route("/admin/courses")
+@admin_required
+def admin_courses():
+    courses = Course.query.order_by(Course.id.desc()).all()
+    return render_template("admin/courses.html", courses=courses)
+
+@app.route("/admin/courses/<int:course_id>/delete", methods=["POST"])
+@admin_required
+def admin_delete_course(course_id):
+    c = Course.query.get_or_404(course_id)
+    db.session.delete(c)   # cascade xóa lessons
+    db.session.commit()
+    flash("Đã xóa khóa học.", "success")
+    return redirect(url_for("admin_courses"))
+
+# ========================
+# ADMIN: Duyệt nạp tiền (Topup)
+# ========================
+@app.route("/admin/topups")
+@admin_required
+def admin_topups():
+    page = int(request.args.get("page", 1))
+    per_page = 15
+
+    q = Payment.query.filter(
+        Payment.user_id.isnot(None),  # là topup
+        Payment.enrollment_id.is_(None)
+    ).order_by(Payment.paymentDate.desc())
+
+    total = q.count()
+    pages = math.ceil(total / per_page) if total else 1
+    topups = q.offset((page - 1) * per_page).limit(per_page).all()
+
+    # tổng nạp đã duyệt (SUCCESS)
+    topup_revenue = db.session.query(func.coalesce(func.sum(Payment.amount), 0.0)).filter(
+        Payment.user_id.isnot(None),
+        Payment.enrollment_id.is_(None),
+        Payment.status == PaymentStatus.SUCCESS
+    ).scalar()
+
+    return render_template(
+        "admin/topups.html",
+        topups=topups,
+        page=page,
+        pages=pages,
+        total=total,
+        topup_revenue=topup_revenue
+    )
+@app.route("/admin/topups/<int:payment_id>/approve", methods=["POST"])
+@admin_required
+def admin_approve_topup(payment_id):
+    p = Payment.query.get_or_404(payment_id)
+    if p.enrollment_id is not None:  # không phải topup
+        abort(400)
+    if p.status == PaymentStatus.SUCCESS:
+        flash("Giao dịch đã duyệt trước đó.", "info")
+        return redirect(url_for("admin_topups"))
+
+    user = User.query.get_or_404(p.user_id)
+    user.balance = (user.balance or 0) + (p.amount or 0)
+    p.status = PaymentStatus.SUCCESS
+    db.session.commit()
+    flash("Đã duyệt nạp tiền và cộng vào số dư.", "success")
+    return redirect(url_for("admin_topups"))
+
+@app.route("/admin/topups/<int:payment_id>/reject", methods=["POST"])
+@admin_required
+def admin_reject_topup(payment_id):
+    p = Payment.query.get_or_404(payment_id)
+    if p.enrollment_id is not None:
+        abort(400)
+    p.status = PaymentStatus.FAILED
+    db.session.commit()
+    flash("Đã từ chối giao dịch nạp tiền.", "warning")
+    return redirect(url_for("admin_topups"))
 
 if __name__ == '__main__':
     app.run(debug=True)

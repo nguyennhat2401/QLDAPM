@@ -1,0 +1,46 @@
+{% extends 'layout/base.html' %}
+{% block content %}
+<div class="container-fluid px-0">
+  <div class="row g-0">
+    <!-- Sidebar -->
+    <div class="col-12 col-md-2 col-lg-2 border-end bg-light min-vh-100">
+      <div class="p-3 fw-bold">ECourse Admin</div>
+      <ul class="nav flex-column">
+        <li class="nav-item">
+          <a class="nav-link {% if request.path == url_for('admin_dashboard') %}active fw-bold text-primary{% endif %}"
+             href="{{ url_for('admin_dashboard') }}">
+            Trang chủ
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link {% if request.path.startswith('/admin/instructors') %}active fw-bold text-primary{% endif %}"
+             href="{{ url_for('admin_instructors') }}">
+            Giảng viên
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link {% if request.path.startswith('/admin/courses') %}active fw-bold text-primary{% endif %}"
+             href="{{ url_for('admin_courses') }}">
+            Khóa học
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link {% if request.path.startswith('/admin/approvals') or request.path.startswith('/admin/topups') %}active fw-bold text-primary{% endif %}"
+             href="{{ url_for('admin_approvals') }}">
+            Phê duyệt
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Main -->
+    <div class="col-12 col-md-10 col-lg-10 p-3">
+      {% block admin_body %}{% endblock %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+

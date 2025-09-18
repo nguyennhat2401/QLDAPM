@@ -1,0 +1,49 @@
+{% extends 'layout/admin_base.html' %}
+{% block admin_body %}
+<h4 class="mb-3">Chào mừng quản trị viên</h4>
+
+<div class="row g-3 mb-3">
+  <div class="col-md-4">
+    <div class="card p-3">
+      <div class="text-muted">Số lượng user</div>
+      <div class="h4">{{ total_users }}</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card p-3">
+      <div class="text-muted">Số khóa học</div>
+      <div class="h4">{{ total_courses }}</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card p-3">
+      <div class="text-muted">Tổng doanh thu (mua khóa)</div>
+      <div class="h4">{{ "{:,.0f}".format(revenue or 0) }} VND</div>
+    </div>
+  </div>
+</div>
+
+<div class="card p-3">
+  <div class="h6">Thống kê nạp tiền tháng hiện tại</div>
+  <canvas id="topupChart" height="110"></canvas>
+</div>
+
+<!-- Chart.js (sử dụng CDN) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const labels = {{ chart_labels|tojson }};
+const data = {{ chart_values|tojson }};
+const ctx = document.getElementById('topupChart').getContext('2d');
+new Chart(ctx, {
+  type: 'bar',
+  data: {
+    labels,
+    datasets: [{ label: 'VND', data }]
+  },
+  options: {
+    scales: { y: { beginAtZero: true } },
+    plugins: { legend: { display: false } }
+  }
+});
+</script>
+{% endblock %}

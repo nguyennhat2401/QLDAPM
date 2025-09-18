@@ -1,0 +1,76 @@
+{% extends 'layout/admin_base.html' %}
+{% block admin_body %}
+<h5>Phê duyệt</h5>
+
+<ul class="nav nav-pills mb-3" id="pills">
+  <li class="nav-item">
+    <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab1">
+      Giảng viên <span class="badge bg-secondary">{{ pending_instructors|length }}</span>
+    </button>
+  </li>
+  <li class="nav-item ms-2">
+    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab2">
+      Đơn nạp <span class="badge bg-secondary">{{ pending_topups|length }}</span>
+    </button>
+  </li>
+  <li class="ms-auto">
+    <a class="btn btn-sm btn-outline-primary" href="{{ url_for('admin_topups') }}">Lịch sử nạp tiền</a>
+  </li>
+</ul>
+
+<div class="tab-content">
+  <!-- GV chờ duyệt -->
+  <div class="tab-pane fade show active" id="tab1">
+    <div class="card">
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead><tr><th>ID</th><th>Username</th><th>Họ tên</th><th>Email</th><th>Minh chứng</th><th>Hành động</th></tr></thead>
+          <tbody>
+          {% for i in pending_instructors %}
+            <tr>
+              <td>{{ i.id }}</td><td>{{ i.username }}</td><td>{{ i.fullName }}</td><td>{{ i.email }}</td>
+              <td>{% if i.evidence %}<a href="/{{ i.evidence }}" target="_blank">Xem</a>{% else %}—{% endif %}</td>
+              <td class="d-flex gap-2">
+                <form method="post" action="{{ url_for('admin_approve_instructor', user_id=i.id) }}"><button class="btn btn-sm btn-success">Duyệt</button></form>
+                <form method="post" action="{{ url_for('admin_reject_instructor', user_id=i.id) }}"><button class="btn btn-sm btn-outline-danger">Từ chối</button></form>
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="6" class="text-muted p-3">Không có yêu cầu.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Đơn nạp chờ duyệt -->
+  <div class="tab-pane fade" id="tab2">
+    <div class="card">
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead><tr><th>ID</th><th>User</th><th>Số tiền</th><th>Thời gian</th><th>Nội dung CK</th><th>Biên lai</th><th>Hành động</th></tr></thead>
+          <tbody>
+          {% for p in pending_topups %}
+            <tr>
+              <td>{{ p.id }}</td>
+              <td>{{ p.user_id }}</td>
+              <td>{{ "{:,.0f}".format(p.amount or 0) }}</td>
+              <td>{{ p.paymentDate.strftime("%d-%m-%Y %H:%M") if p.paymentDate else "" }}</td>
+              <td>{{ p.note }}</td>
+              <td>{% if p.proof %}<a href="/{{ p.proof }}" target="_blank">Xem</a>{% else %}—{% endif %}</td>
+              <td class="d-flex gap-2">
+                <form method="post" action="{{ url_for('admin_approve_topup', payment_id=p.id) }}"><button class="btn btn-sm btn-success">Duyệt</button></form>
+                <form method="post" action="{{ url_for('admin_reject_topup', payment_id=p.id) }}"><button class="btn btn-sm btn-outline-danger">Từ chối</button></form>
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="7" class="text-muted p-3">Không có đơn nạp chờ duyệt.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

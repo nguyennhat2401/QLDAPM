@@ -1,0 +1,19 @@
+{% extends 'layout/admin_base.html' %}
+{% block admin_body %}
+<h5>Danh sách giảng viên</h5>
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-sm mb-0">
+      <thead><tr><th>ID</th><th>Username</th><th>Họ tên</th><th>Email</th><th>Duyệt</th></tr></thead>
+      <tbody>
+      {% for i in instructors %}
+        <tr>
+          <td>{{ i.id }}</td><td>{{ i.username }}</td><td>{{ i.fullName }}</td><td>{{ i.email }}</td>
+          <td>{{ 'Đã duyệt' if i.is_approved else 'Chưa duyệt' }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
