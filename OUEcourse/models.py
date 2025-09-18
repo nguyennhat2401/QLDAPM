@@ -95,6 +95,8 @@ class Payment(db.Model):
     status = db.Column(db.Enum(PaymentStatus), default=PaymentStatus.PENDING)
 
     proof = db.Column(db.String(255))
+    user_id = db.Column(db.BigInteger, db.ForeignKey("users.id"), nullable=True)  # thêm
+    note = db.Column(db.String(255))  # nội dung CK
     enrollment_id = db.Column(db.BigInteger, db.ForeignKey("enrollments.id"))
 
 # -------------------

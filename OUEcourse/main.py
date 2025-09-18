@@ -1,4 +1,5 @@
 import math
+from datetime import datetime
 
 from flask import render_template, request, redirect, flash, url_for
 from flask_login import login_user, logout_user, current_user, login_required
@@ -269,70 +270,89 @@ def open_course(course_id):
 
     course = Course.query.get_or_404(course_id)
 
+    # Đã mua → vào thẳng khóa
     enrolled = Enrollment.query.filter_by(student_id=current_user.id, course_id=course_id).first()
     if enrolled:
         return redirect(url_for('course_detail', course_id=course_id))
 
-    if (course.price or 0) == 0:
+    # Miễn phí → auto-enroll
+    price = float(course.price or 0)
+    if price == 0:
         e = Enrollment(student_id=current_user.id, course_id=course.id)
         db.session.add(e)
         db.session.commit()
         return redirect(url_for('course_detail', course_id=course_id))
 
-    return redirect(url_for('checkout', course_id=course_id))
+    # Có phí → kiểm tra số dư
+    if (current_user.balance or 0) < price:
+        flash("Số dư không đủ. Vui lòng nạp tiền!", "danger")
+        return redirect(url_for("topup"))
+
+    # Trừ tiền & ghi nhận thanh toán thành công
+    current_user.balance = (current_user.balance or 0) - price
+    enroll = Enrollment(student_id=current_user.id, course_id=course.id)
+    db.session.add(enroll)
+    db.session.flush()  # lấy enroll.id
+
+    pay = Payment(
+        amount=price,
+        status=PaymentStatus.SUCCESS,       # thanh toán thành công ngay vì trừ từ số dư
+        enrollment_id=enroll.id,
+        user_id=current_user.id,            # cần có cột user_id (như bạn đã dùng ở /topup)
+        note=f"BUY-{course.id}-{current_user.id}"
+    )
+    db.session.add(pay)
+    db.session.commit()
+
+    flash("Mua khóa học thành công!", "success")
+    return redirect(url_for('course_detail', course_id=course_id))
+
 ALLOWED_PROOF_EXTS = {"png", "jpg", "jpeg", "pdf"}
 
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_PROOF_EXTS
 
-@app.route("/checkout/<int:course_id>", methods=["GET", "POST"])
+@app.route("/topup", methods=["GET", "POST"])
 @login_required
-def checkout(course_id):
-    course = Course.query.get_or_404(course_id)
-
-    # nếu đã enroll thì vào luôn
-    existed = Enrollment.query.filter_by(student_id=current_user.id,
-                                         course_id=course_id).first()
-    if existed:
-        return redirect(url_for('course_detail', course_id=course_id))
-
+def topup():
     if request.method == "POST":
+        amount = float(request.form.get("amount") or 0)
         proof_file = request.files.get("proof")
         proof_path = None
 
+        if amount <= 0:
+            flash("Số tiền nạp không hợp lệ!", "danger")
+            return redirect(url_for("topup"))
+
         if proof_file and proof_file.filename and allowed_file(proof_file.filename):
             os.makedirs(app.config["PAYMENT_UPLOAD_FOLDER"], exist_ok=True)
-            fname = secure_filename(proof_file.filename)
+            fname = secure_filename(f"{current_user.id}_{proof_file.filename}")
             save_path = os.path.join(app.config["PAYMENT_UPLOAD_FOLDER"], fname)
             proof_file.save(save_path)
             proof_path = save_path
 
-        # Tạo enrollment (chưa học được cho đến khi duyệt, tuỳ bạn)
-        enroll = Enrollment(student_id=current_user.id, course_id=course.id)
-        db.session.add(enroll)
-        db.session.flush()  # có enroll.id cho payment
+        note_code = f"TOPUP-{current_user.id}-{int(datetime.utcnow().timestamp())}"
 
         pay = Payment(
-            amount=course.price or 0,
+            amount=amount,
             status=PaymentStatus.PENDING,
-            enrollment_id=enroll.id,
-            proof=proof_path  # nếu bạn đã thêm cột proof
+            user_id=current_user.id,
+            note=note_code,
+            proof=proof_path
         )
         db.session.add(pay)
         db.session.commit()
 
-        flash("Đã gửi xác nhận thanh toán. Vui lòng chờ duyệt!", "success")
-        return redirect(url_for('profile'))
+        flash("Đã gửi yêu cầu nạp tiền, vui lòng chờ duyệt!", "success")
+        return redirect(url_for("profile"))
 
-    # Số tài khoản: bạn có thể hard-code hoặc lấy từ config/db
     bank_info = {
         "bank": "Vietcombank",
         "account_name": "CONG TY ECourse",
         "account_number": "0123456789",
-        "note_format": f"EC-{current_user.id}-{course_id}"
+        "note_format": f"TOPUP-{current_user.id}-<timestamp>"
     }
-    return render_template("checkout.html", course=course, bank_info=bank_info)
-
+    return render_template("topup.html", bank_info=bank_info)
 
 if __name__ == '__main__':
     app.run(debug=True)

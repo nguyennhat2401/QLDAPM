@@ -26,23 +26,36 @@
             <ul class="navbar-nav">
                 {% if current_user.is_authenticated %}
                     <li class="nav-item">
-                        <a class="nav-link text-warning" href="/profile">{{ current_user.balance }} VND</a>
+                        <a class="nav-link text-warning" href="/profile">{{ "{:,.0f}".format(current_user.balance or 0) }} VND</a>
                     </li>
+
+                    <!-- Nút Nạp tiền: đăng nhập rồi -> vào /topup -->
+                    <li class="nav-item">
+                        <a class="btn btn-sm btn-warning ms-2" href="{{ url_for('topup') }}">Nạp tiền</a>
+                    </li>
+
                     <li class="nav-item d-flex align-items-center">
                         <a class="nav-link text-light d-flex align-items-center" href="/profile">
-                            <img src="{{ current_user.avatar }}" width="28" class="rounded-circle me-1" />
                             Chào {{ current_user.username }}
                         </a>
                     </li>
+
+                    {# nếu có quyền admin thì giữ nguyên #}
                     {% if current_user.user_role == 'User.ADMIN' %}
-                        <li class="nav-item">
-                            <a class="nav-link text-info" href="/admin">ADMIN</a>
-                        </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-info" href="/admin">ADMIN</a>
+                    </li>
                     {% endif %}
+
                     <li class="nav-item">
                         <a class="btn btn-sm btn-danger ms-2" href="/logout">Đăng xuất</a>
                     </li>
                 {% else %}
+                    <!-- Chưa đăng nhập: Nút Nạp tiền -> /login?next=/topup -->
+                    <li class="nav-item">
+                        <a class="btn btn-sm btn-warning me-2" href="{{ url_for('login_process', next=url_for('topup')) }}">Nạp tiền</a>
+                    </li>
+
                     <li class="nav-item">
                         <a class="btn btn-sm btn-light me-2" href="/login">Đăng nhập</a>
                     </li>
@@ -51,6 +64,7 @@
                     </li>
                 {% endif %}
             </ul>
+
         </div>
     </div>
 </nav>

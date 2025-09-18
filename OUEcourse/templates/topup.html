@@ -1,0 +1,24 @@
+{% extends 'layout/base.html' %}
+{% block content %}
+<div class="container mt-4" style="max-width:720px;">
+  <h3>Nạp tiền vào tài khoản</h3>
+
+  <form method="POST" enctype="multipart/form-data" class="card p-3">
+    <label class="form-label">Số tiền cần nạp (VND)</label>
+    <input type="number" name="amount" class="form-control mb-3" min="1000" required>
+
+    <div class="alert alert-info">
+      <b>Thông tin chuyển khoản:</b><br>
+      Ngân hàng: {{ bank_info.bank }}<br>
+      Số TK: <span class="text-primary">{{ bank_info.account_number }}</span><br>
+      Chủ TK: {{ bank_info.account_name }}<br>
+      Nội dung CK (bắt buộc): <code>{{ bank_info.note_format }}</code>
+    </div>
+
+    <label class="form-label">Tải lên biên lai</label>
+    <input type="file" name="proof" accept=".png,.jpg,.jpeg,.pdf" class="form-control mb-3">
+
+    <button class="btn btn-success">Xác nhận nạp tiền</button>
+  </form>
+</div>
+{% endblock %}
