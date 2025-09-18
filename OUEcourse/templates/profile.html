@@ -1,11 +1,11 @@
 {% extends 'layout/base.html' %}
 {% block content %}
-<div class="container mt-4">
+<div class="container-fluid mt-4 px-4">
     {% if current_user.is_authenticated %}
     <div class="row g-4">
 
         <!-- Chi tiết người dùng -->
-        <div class="col-md-4">
+        <div class="col-lg-4 col-12">
             <div class="card border-0 shadow-sm rounded-3">
                 <div class="card-header bg-primary text-white fw-bold">Thông tin cá nhân</div>
                 <div class="card-body">
@@ -21,7 +21,7 @@
 
         <!-- Nếu là giảng viên -->
         {% if current_user.role.name == "INSTRUCTOR" %}
-        <div class="col-md-4">
+        <div class="col-lg-8 col-12">
             <div class="card border-0 shadow-sm rounded-3">
                 <div class="card-header bg-warning text-dark fw-bold">Khóa học đang giảng dạy</div>
                 <div class="card-body">
@@ -42,7 +42,7 @@
 
         <!-- Nếu là học viên -->
         {% if current_user.role.name == "STUDENT" %}
-        <div class="col-md-4">
+        <div class="col-lg-8 col-12">
             <div class="card border-0 shadow-sm rounded-3">
                 <div class="card-header bg-success text-white fw-bold">Khóa học đang tham gia</div>
                 <div class="card-body">
@@ -62,7 +62,62 @@
         </div>
         {% endif %}
 
+
     </div>
+    <div class="row">
+  <!-- ... các cột hiện có ... -->
+
+  <!-- Lịch sử nạp tiền -->
+  <div class="row g-3 mt-2">
+    <div class="card shadow-sm">
+      <div class="card-header text-danger fw-bold">Lịch sử nạp tiền</div>
+      <div class="card-body p-0">
+        {% if topups and topups|length > 0 %}
+          <div class="table-responsive">
+            <table class="table table-sm mb-0">
+              <thead>
+                <tr>
+                  <th class="text-nowrap">Thời gian</th>
+                  <th class="text-nowrap">Số tiền (VND)</th>
+                  <th class="text-nowrap">Trạng thái</th>
+                  <th class="text-nowrap">Nội dung CK</th>
+                  <th class="text-nowrap">Biên lai</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for p in topups %}
+                <tr>
+                  <td class="text-nowrap">{{ p.paymentDate.strftime("%d-%m-%Y %H:%M") if p.paymentDate else "" }}</td>
+                  <td class="text-nowrap">{{ "{:,.0f}".format(p.amount or 0) }}</td>
+                  <td class="text-nowrap">
+                    {% if p.status.name == "SUCCESS" %}
+                      <span class="badge bg-success">Đã duyệt</span>
+                    {% elif p.status.name == "PENDING" %}
+                      <span class="badge bg-warning text-dark">Chờ duyệt</span>
+                    {% else %}
+                      <span class="badge bg-danger">Từ chối</span>
+                    {% endif %}
+                  </td>
+                  <td class="text-truncate" style="max-width: 260px;">{{ p.note }}</td>
+                  <td class="text-nowrap">
+                    {% if p.proof %}
+                      <a class="btn btn-sm btn-outline-secondary" href="/{{ p.proof }}" target="_blank">Xem</a>
+                    {% else %}
+                      —
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="p-3 text-muted mb-0">Chưa có giao dịch nạp tiền.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
     {% endif %}
 </div>
 {% endblock %}

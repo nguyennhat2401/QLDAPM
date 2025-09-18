@@ -37,7 +37,22 @@ def profile():
     if current_user.role.name == "INSTRUCTOR":
         teaching_courses = Course.query.filter_by(instructor_id=current_user.id).all()
 
-    return render_template("profile.html", user=current_user, user_courses=user_courses,teaching_courses=teaching_courses)
+    # Lấy lịch sử nạp tiền: payments có user_id và KHÔNG gắn enrollment (topup)
+    topups = Payment.query \
+        .filter(
+        Payment.user_id == current_user.id,
+        Payment.enrollment_id.is_(None)
+    ) \
+        .order_by(Payment.paymentDate.desc()) \
+        .all()
+
+    return render_template(
+        "profile.html",
+        user=current_user,
+        user_courses=user_courses,
+        teaching_courses=teaching_courses,
+        topups=topups
+    )
 
 @app.route("/edit-profile", methods=["GET", "POST"])
 def edit_profile():
