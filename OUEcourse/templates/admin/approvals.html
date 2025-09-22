@@ -54,7 +54,7 @@
           {% for p in pending_topups %}
             <tr>
               <td>{{ p.id }}</td>
-              <td>{{ p.user_id }}</td>
+              <td>{{ p.user.fullName }}</td>
               <td>{{ "{:,.0f}".format(p.amount or 0) }}</td>
               <td>{{ p.paymentDate.strftime("%d-%m-%Y %H:%M") if p.paymentDate else "" }}</td>
               <td>{{ p.note }}</td>
