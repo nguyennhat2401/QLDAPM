@@ -10,7 +10,7 @@ from __init__ import app, Login, db
 from dao import load_course, count_course, UPLOAD_FOLDER
 from decorators import annonymous_user, admin_required
 from models import (Enrollment, Course,
-                    Lesson, UserRole, Payment, PaymentStatus, User)
+                    Lesson, UserRole, Payment, PaymentStatus, User, Question, Answer)
 from werkzeug.utils import secure_filename
 
 
@@ -20,36 +20,35 @@ def get_user(user_id):
 
 @app.route("/")
 def index():
-    # Lấy tham số query an toàn
     page = request.args.get('page', 1, type=int)
     course_id = request.args.get('course_id', type=int)
     kw = request.args.get('kw', type=str)
 
-    # Gọi DAO đúng tham số (sửa coure_id -> course_id)
     courses = load_course(course_id=course_id, kw=kw, page=page)
-
     page_size = app.config.get("PAGE_SIZE", 12)
-    total = count_course()  # nếu muốn đúng theo filter kw/course_id thì thay = count_course(kw=kw, course_id=course_id)
+    total = count_course()
 
-    # Số dư để hiển thị trong modal "Mua ngay"
     user_balance = current_user.balance if current_user.is_authenticated else 0
 
-    # (Tùy chọn) nếu template có dùng c.purchased, set mặc định False để tránh AttributeError
-    try:
-        for it in courses:
-            if not hasattr(it, "purchased"):
-                it.purchased = False
-    except TypeError:
-        # courses không phải iterable -> đảm bảo luôn là list
-        courses = [] if courses is None else list(courses)
+    # Đánh dấu purchased = True nếu user đã mua
+    if current_user.is_authenticated:
+        purchased_ids = {
+            e.course_id for e in Enrollment.query.filter_by(student_id=current_user.id).all()
+        }
+        for c in courses:
+            c.purchased = c.id in purchased_ids
+    else:
+        for c in courses:
+            c.purchased = False
 
     return render_template(
         "index.html",
-        courses=courses,                                # truyền đúng tên & là list
-        pages=max(1, math.ceil(total / page_size)),     # bảo vệ chia 0
-        page=page,                                      # để active phân trang
-        user_balance=user_balance                       # để modal hiển thị số dư
+        courses=courses,
+        pages=max(1, math.ceil(total / page_size)),
+        page=page,
+        user_balance=user_balance
     )
+
 
 @app.route("/profile")
 def profile():
@@ -101,9 +100,17 @@ def course_detail(course_id, lesson_id=None):
     if not course:
         return "Khóa học không tồn tại!", 404
 
-    enrollment = Enrollment.query.filter_by(student_id=current_user.id, course_id=course_id).first()
-    if not enrollment:
-        return "Bạn chưa đăng ký khóa học này!", 403
+    # Nếu giảng viên đang xem khóa học mình dạy → bỏ qua kiểm tra enrollment
+    instructor_view = request.args.get("instructor_view")
+    if instructor_view and current_user.is_authenticated \
+            and current_user.role.name == "INSTRUCTOR" \
+            and course.instructor_id == current_user.id:
+        enrollment = None  # không cần enrollment
+    else:
+        # Học viên phải đăng ký mới xem được
+        enrollment = Enrollment.query.filter_by(student_id=current_user.id, course_id=course_id).first()
+        if not enrollment:
+            return "Bạn chưa đăng ký khóa học này!", 403
 
     lessons = Lesson.query.filter_by(course_id=course_id).all()
     selected_lesson = Lesson.query.get(lesson_id) if lesson_id else None
@@ -113,6 +120,7 @@ def course_detail(course_id, lesson_id=None):
                            lessons=lessons,
                            selected_lesson=selected_lesson,
                            enrollment=enrollment)
+
 
 
 @app.route("/instructor/courses")
@@ -569,6 +577,51 @@ def admin_reject_topup(payment_id):
     db.session.commit()
     flash("Đã từ chối giao dịch nạp tiền.", "warning")
     return redirect(url_for("admin_topups"))
+
+@app.route("/course/<int:course_id>/forum", methods=["GET", "POST"])
+@login_required
+def course_forum(course_id):
+    course = Course.query.get_or_404(course_id)
+    questions = Question.query.filter_by(course_id=course_id).order_by(Question.createdDate.desc()).all()
+
+    # Học viên đặt câu hỏi
+    if request.method == "POST":
+        content = request.form.get("question_content")
+        if content:
+            q = Question(content=content, course_id=course_id, author_id=current_user.id)
+            db.session.add(q)
+            db.session.commit()
+            return redirect(f"/course/{course_id}/forum")
+
+    return render_template("course_forum.html", course=course, questions=questions)
+
+@app.route("/course/<int:course_id>/answer/<int:question_id>", methods=["POST"])
+@login_required
+def answer_question(course_id, question_id):
+    if current_user.role.name != "INSTRUCTOR":
+        return "Chỉ giảng viên mới được trả lời!", 403
+
+    content = request.form.get("answer_content")
+    if content:
+        ans = Answer(content=content, question_id=question_id)
+        db.session.add(ans)
+        db.session.commit()
+
+    return redirect(f"/course/{course_id}/forum")
+
+
+@app.route("/my-courses")
+@login_required
+def my_courses():
+    if current_user.role.name == "INSTRUCTOR":
+        # Chuyển hướng giảng viên sang trang quản lý khóa học
+        return redirect(url_for("instructor_courses"))
+    else:
+        # Học viên: hiển thị các khóa học đã đăng ký
+        courses = [en.course for en in Enrollment.query.filter_by(student_id=current_user.id).all()]
+        return render_template("my_courses.html", courses=courses)
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)

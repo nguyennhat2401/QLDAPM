@@ -10,6 +10,7 @@
                 </div>
                 <div class="card-body p-0">
                     <div class="accordion" id="lessonAccordion">
+                        <a href="/course/{{course.id}}/forum" class="btn btn-sm btn-outline-secondary w-100 mt-2">Diễn đàn khóa học</a>
                         {% for lesson in lessons %}
                         <div class="accordion-item">
                             <h2 class="accordion-header" id="heading{{ lesson.id }}">

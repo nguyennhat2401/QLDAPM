@@ -14,6 +14,7 @@
                     <li class="list-group-item d-flex justify-content-between align-items-center">
                         <span class="fw-bold text-primary">{{ course.title }}</span>
                         <div class="btn-group">
+                            <a href="/course/{{course.id}}?instructor_view=1" class="btn btn-info btn-sm me-2">Xem</a>
                             <a href="/instructor/edit-course/{{course.id}}" class="btn btn-warning btn-sm">Chỉnh sửa</a>
                             <form action="/instructor/delete-course/{{course.id}}" method="post"
                                   onsubmit="return confirm('Bạn chắc chắn muốn xóa?')">
