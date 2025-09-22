@@ -20,16 +20,36 @@ def get_user(user_id):
 
 @app.route("/")
 def index():
-    page = request.args.get('page', 1)
-    course_id = request.args.get('course_id')
-    kw = request.args.get('kw')
-    course = load_course(coure_id=course_id, kw=kw, page=int(page))
+    # Lấy tham số query an toàn
+    page = request.args.get('page', 1, type=int)
+    course_id = request.args.get('course_id', type=int)
+    kw = request.args.get('kw', type=str)
 
-    page_size = app.config["PAGE_SIZE"]
-    total = count_course()
+    # Gọi DAO đúng tham số (sửa coure_id -> course_id)
+    courses = load_course(course_id=course_id, kw=kw, page=page)
 
-    return render_template('index.html',courses=course,pages=math.ceil(total/page_size))
+    page_size = app.config.get("PAGE_SIZE", 12)
+    total = count_course()  # nếu muốn đúng theo filter kw/course_id thì thay = count_course(kw=kw, course_id=course_id)
 
+    # Số dư để hiển thị trong modal "Mua ngay"
+    user_balance = current_user.balance if current_user.is_authenticated else 0
+
+    # (Tùy chọn) nếu template có dùng c.purchased, set mặc định False để tránh AttributeError
+    try:
+        for it in courses:
+            if not hasattr(it, "purchased"):
+                it.purchased = False
+    except TypeError:
+        # courses không phải iterable -> đảm bảo luôn là list
+        courses = [] if courses is None else list(courses)
+
+    return render_template(
+        "index.html",
+        courses=courses,                                # truyền đúng tên & là list
+        pages=max(1, math.ceil(total / page_size)),     # bảo vệ chia 0
+        page=page,                                      # để active phân trang
+        user_balance=user_balance                       # để modal hiển thị số dư
+    )
 
 @app.route("/profile")
 def profile():

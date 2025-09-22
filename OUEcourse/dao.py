@@ -3,6 +3,7 @@ import os
 
 from flask_login import current_user
 from werkzeug.utils import secure_filename
+from sqlalchemy import or_
 
 from models import User, Lesson, Course, Enrollment
 from __init__ import app,db
@@ -46,25 +47,63 @@ def add_user(username, password, email, fullname, role, evidence_file=None):
 
     return u
 
-def load_course(id=None,coure_id=None,kw=None,page=1):
-    query=Course.query
+def load_course(course_id=None, kw=None, page=1, page_size=None, id=None):
+    """
+    Trả về danh sách khóa học theo filter (course_id, kw) + phân trang.
+    - Nếu truyền id: trả về 1 course (giữ tương thích cũ).
+    """
+    # Giữ tương thích với tham số cũ id
+    if id:
+        return Course.query.get(id)
+
+    q = Course.query
+
+    if course_id:
+        q = q.filter(Course.id == course_id)
 
     if kw:
-        return query.filter(Course.title.contains(kw))
-    if id:
-        return query.get(id)
+        like = f"%{kw.strip()}%"
+        q = q.filter(
+            or_(
+                Course.title.ilike(like),
+                Course.description.ilike(like)
+            )
+        )
 
-    page_size=app.config["PAGE_SIZE"]
-    start = (page - 1) * page_size
-    query = query.slice(start,start+page_size)
+    # Phân trang
+    page = max(1, int(page or 1))
+    if page_size is None:
+        page_size = app.config.get("PAGE_SIZE", 12)
 
-    return query.all()
-
+    items = (
+        q.order_by(Course.createdDate.desc())
+         .offset((page - 1) * page_size)
+         .limit(page_size)
+         .all()
+    )
+    return items
 def get_user_by_id(id):
     return User.query.get(id)
 
-def count_course():
-    return Course.query.count()
+def count_course(course_id=None, kw=None):
+    """
+    Đếm tổng số khóa học theo cùng filter với load_course để tính số trang.
+    """
+    q = Course.query
+
+    if course_id:
+        q = q.filter(Course.id == course_id)
+
+    if kw:
+        like = f"%{kw.strip()}%"
+        q = q.filter(
+            or_(
+                Course.title.ilike(like),
+                Course.description.ilike(like)
+            )
+        )
+
+    return q.count()
 
 
 def get_courses_by_user_id(user_id):
