@@ -6,7 +6,8 @@
             Chỉnh sửa khóa học
         </div>
         <div class="card-body p-4">
-            <form method="POST">
+            <!-- Form chính để lưu toàn bộ thay đổi -->
+            <form method="POST" action="" enctype="multipart/form-data">
                 <!-- Tiêu đề khóa học -->
                 <div class="mb-3">
                     <label class="form-label fw-bold">Tiêu đề khóa học</label>
@@ -33,10 +34,12 @@
                         <input type="hidden" name="lesson_id" value="{{ lesson.id }}">
                         <input type="text" name="lesson_title" class="form-control mb-2" value="{{ lesson.title }}" required>
                         <textarea name="lesson_content" class="form-control mb-2" rows="2">{{ lesson.content }}</textarea>
-                        <form method="POST" action="/instructor/delete-lesson/{{lesson.id}}/{{course.id}}"
-                              onsubmit="return confirm('Xóa bài học này?')" class="d-inline">
-                            <button class="btn btn-sm btn-outline-danger">Xóa bài học</button>
-                        </form>
+                        <input type="text" name="lesson_video" class="form-control mb-2" value="{{ lesson.video_url or '' }}" placeholder="Link YouTube (nếu có)">
+
+                        <div class="text-end mt-2">
+                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                onclick="deleteLesson({{ lesson.id }}, {{ course.id }})">Xóa bài học</button>
+                        </div>
                     </div>
                     {% endfor %}
                 {% else %}
@@ -48,9 +51,19 @@
                 <div id="new-lesson-container"></div>
                 <button type="button" class="btn btn-sm btn-outline-secondary mt-2" onclick="addNewLesson()">+ Thêm bài học</button>
 
-                <!-- Nút lưu -->
-                <div class="mt-4">
-                    <button class="btn btn-success w-100">Lưu thay đổi</button>
+                <!-- Lưu/Hủy -->
+                <div class="mt-4 d-flex justify-content-between">
+                    <a href="/instructor/courses"
+                       class="btn btn-outline-secondary w-50 me-2 d-flex align-items-center justify-content-center rounded-pill shadow-sm"
+                       style="font-weight: 500;">
+                        <i class="bi bi-x-circle me-2"></i> Hủy
+                    </a>
+
+                    <button type="submit"
+                            class="btn btn-success w-50 d-flex align-items-center justify-content-center rounded-pill shadow-sm"
+                            style="font-weight: 500;">
+                        <i class="bi bi-check-circle me-2"></i> Lưu thay đổi
+                    </button>
                 </div>
             </form>
         </div>
@@ -64,9 +77,35 @@ function addNewLesson() {
     div.classList.add("lesson-item", "mb-3", "p-3", "border", "rounded");
     div.innerHTML = `
         <input type="text" name="new_lesson_title" class="form-control mb-2" placeholder="Tiêu đề bài học mới" required>
-        <textarea name="new_lesson_content" class="form-control" placeholder="Nội dung bài học mới" rows="2"></textarea>
+        <select class="form-select mb-2" onchange="toggleLessonType(this)">
+            <option value="text">Bài học dạng Text</option>
+            <option value="video">Bài học dạng Video</option>
+            <option value="pdf">Bài học dạng PDF</option>
+        </select>
+        <div class="lesson-content">
+            <textarea name="new_lesson_content" class="form-control" placeholder="Nội dung bài học" rows="2"></textarea>
+        </div>
     `;
     container.appendChild(div);
+}
+
+function toggleLessonType(select) {
+    const wrapper = select.closest(".lesson-item");
+    const contentDiv = wrapper.querySelector(".lesson-content");
+    if (select.value === "video") {
+        contentDiv.innerHTML = `<input type="text" name="new_lesson_video" class="form-control" placeholder="Nhập link YouTube">`;
+    } else if (select.value === "pdf") {
+        contentDiv.innerHTML = `<input type="file" name="new_lesson_pdf" class="form-control" accept="application/pdf">`;
+    } else {
+        contentDiv.innerHTML = `<textarea name="new_lesson_content" class="form-control" placeholder="Nội dung bài học" rows="2"></textarea>`;
+    }
+}
+
+function deleteLesson(lessonId, courseId) {
+    if (confirm("Xóa bài học này?")) {
+        fetch(`/instructor/delete-lesson/${lessonId}/${courseId}`, {method: "POST"})
+            .then(() => location.reload());
+    }
 }
 </script>
 {% endblock %}

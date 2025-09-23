@@ -5,10 +5,13 @@ from calendar import monthrange
 from flask import render_template, request, redirect, flash, url_for, abort
 from flask_login import login_user, logout_user, current_user, login_required
 import os
+
+from sqlalchemy.orm import joinedload
+
 import dao
 from __init__ import app, Login, db
-from dao import load_course, count_course, UPLOAD_FOLDER
-from decorators import annonymous_user, admin_required
+from dao import load_course, count_course
+from decorators import annonymous_user, admin_required, get_embed_url
 from models import (Enrollment, Course,
                     Lesson, UserRole, Payment, PaymentStatus, User, Question, Answer)
 from werkzeug.utils import secure_filename
@@ -102,9 +105,11 @@ def course_detail(course_id, lesson_id=None):
 
     # Nếu giảng viên đang xem khóa học mình dạy → bỏ qua kiểm tra enrollment
     instructor_view = request.args.get("instructor_view")
-    if instructor_view and current_user.is_authenticated \
-            and current_user.role.name == "INSTRUCTOR" \
-            and course.instructor_id == current_user.id:
+    if current_user.is_authenticated and (
+            current_user.role.name == "ADMIN" or
+            (current_user.role.name == "INSTRUCTOR" and current_user.id == course.instructor_id)
+    ):
+
         enrollment = None  # không cần enrollment
     else:
         # Học viên phải đăng ký mới xem được
@@ -131,7 +136,6 @@ def instructor_courses():
     courses = Course.query.filter_by(instructor_id=current_user.id).all()
     return render_template("instructor_course.html", courses=courses)
 
-
 @app.route("/instructor/add-course", methods=["GET", "POST"])
 def add_course():
     if current_user.role != UserRole.INSTRUCTOR:
@@ -144,8 +148,10 @@ def add_course():
 
         lesson_titles = request.form.getlist("lesson_title")
         lesson_contents = request.form.getlist("lesson_content")
+        lesson_videos = request.form.getlist("lesson_video")
+        lesson_pdfs = request.files.getlist("lesson_pdf")
 
-        if not lesson_titles or not any(title.strip() for title in lesson_titles):
+        if not lesson_titles or not any(t.strip() for t in lesson_titles):
             return "Bạn phải thêm ít nhất một bài học!", 400
 
         # Tạo khóa học
@@ -158,21 +164,36 @@ def add_course():
         db.session.add(course)
         db.session.commit()
 
-        # Thêm bài học cho khóa học
-        for i in range(len(lesson_titles)):
-            if lesson_titles[i].strip():
+        # Thêm bài học
+        for i, t in enumerate(lesson_titles):
+            if t.strip():
+                content = lesson_contents[i] if i < len(lesson_contents) else None
+                video = lesson_videos[i] if i < len(lesson_videos) else None
+                video = get_embed_url(video) if video else None
+
+                pdf_path = None
+                if i < len(lesson_pdfs) and lesson_pdfs[i]:
+                    pdf_file = lesson_pdfs[i]
+                    if pdf_file.filename:
+                        pdf_dir = os.path.join("static", "uploads", "pdfs")
+                        os.makedirs(pdf_dir, exist_ok=True)
+                        pdf_path = os.path.join(pdf_dir, pdf_file.filename)
+                        pdf_file.save(pdf_path)
+                        pdf_path = "/" + pdf_path
+
                 lesson = Lesson(
-                    title=lesson_titles[i],
-                    content=lesson_contents[i],
+                    title=t,
+                    content=pdf_path if pdf_path else (content if content else None),
+                    video_url=video,
                     course_id=course.id
                 )
                 db.session.add(lesson)
 
         db.session.commit()
-
         return redirect("/instructor/courses")
 
     return render_template("add_course.html")
+
 
 
 @app.route("/instructor/delete-course/<int:course_id>", methods=["POST"])
@@ -189,13 +210,20 @@ def delete_course(course_id):
 
     return redirect("/instructor/courses")
 
+
+ALLOWED_PDF_EXTENSIONS = {"pdf"}
+PDF_UPLOAD_FOLDER = "static/uploads/pdfs"
+
+def allowed_pdf(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_PDF_EXTENSIONS
+
 @app.route("/instructor/edit-course/<int:course_id>", methods=["GET", "POST"])
 def edit_course(course_id):
     if current_user.role != UserRole.INSTRUCTOR:
         return "Bạn không có quyền truy cập!", 403
 
-    course = Course.query.get(course_id)
-    if not course or course.instructor_id != current_user.id:
+    course = Course.query.get_or_404(course_id)
+    if course.instructor_id != current_user.id:
         return "Khóa học không tồn tại hoặc bạn không phải người tạo!", 404
 
     if request.method == "POST":
@@ -204,29 +232,43 @@ def edit_course(course_id):
         course.description = request.form.get("description")
         course.price = request.form.get("price", 0)
 
-        # Cập nhật bài học cũ
-        lesson_ids = request.form.getlist("lesson_id")
-        lesson_titles = request.form.getlist("lesson_title")
-        lesson_contents = request.form.getlist("lesson_content")
-
-        for i, lesson_id in enumerate(lesson_ids):
-            lesson = Lesson.query.get(int(lesson_id))
-            if lesson:
-                lesson.title = lesson_titles[i]
-                lesson.content = lesson_contents[i]
-
         # Thêm bài học mới
         new_titles = request.form.getlist("new_lesson_title")
         new_contents = request.form.getlist("new_lesson_content")
+        new_videos = request.form.getlist("new_lesson_video")
+        new_pdfs = request.files.getlist("new_lesson_pdf")
 
-        for i in range(len(new_titles)):
-            if new_titles[i].strip():
-                new_lesson = Lesson(
-                    title=new_titles[i],
-                    content=new_contents[i],
-                    course_id=course.id
-                )
-                db.session.add(new_lesson)
+        os.makedirs(PDF_UPLOAD_FOLDER, exist_ok=True)
+
+        for i, title in enumerate(new_titles):
+            t = title.strip()
+            if not t:
+                continue
+
+            # Nội dung text
+            content = (new_contents[i].strip() if i < len(new_contents) and new_contents[i].strip() else None)
+
+            # Link video
+            video = (new_videos[i].strip() if i < len(new_videos) and new_videos[i].strip() else None)
+
+            # File PDF
+            pdf_path = None
+            if i < len(new_pdfs) and new_pdfs[i]:
+                pdf_file = new_pdfs[i]
+                if pdf_file.filename and allowed_pdf(pdf_file.filename):
+                    filename = secure_filename(pdf_file.filename)
+                    pdf_path = os.path.join(PDF_UPLOAD_FOLDER, filename)
+                    pdf_file.save(pdf_path)
+                    pdf_path = "/" + pdf_path  # để load từ static
+
+            # Lưu vào DB
+            lesson = Lesson(
+                title=t,
+                content=pdf_path if pdf_path else (content if not video else None),
+                video_url=video,
+                course_id=course.id
+            )
+            db.session.add(lesson)
 
         db.session.commit()
         return redirect("/instructor/courses")
@@ -618,10 +660,11 @@ def my_courses():
         return redirect(url_for("instructor_courses"))
     else:
         # Học viên: hiển thị các khóa học đã đăng ký
-        courses = [en.course for en in Enrollment.query.filter_by(student_id=current_user.id).all()]
-        return render_template("my_courses.html", courses=courses)
+        enrollments = Enrollment.query.options(joinedload(Enrollment.course)) \
+            .filter_by(student_id=current_user.id).all()
+        courses = [en.course for en in enrollments if en.course]
 
-
+    return render_template("my_courses.html", courses=courses)
 
 if __name__ == '__main__':
     app.run(debug=True)

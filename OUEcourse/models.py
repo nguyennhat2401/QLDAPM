@@ -65,7 +65,7 @@ class Lesson(db.Model):
     id = db.Column(db.BigInteger, primary_key=True,autoincrement=True)
     title = db.Column(db.String(200), nullable=False)
     content = db.Column(db.Text)
-
+    video_url = db.Column(db.String(255))
     course_id = db.Column(db.BigInteger, db.ForeignKey("courses.id"))
 
 # -------------------

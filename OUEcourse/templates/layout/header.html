@@ -42,55 +42,52 @@
                 <button class="btn btn-outline-light" type="submit">Tìm</button>
             </form>
 
-            <!-- User menu -->
-            <ul class="navbar-nav">
+           <!-- User menu -->
+            <ul class="navbar-nav d-flex align-items-center">
                 {% if current_user.is_authenticated %}
-                    <li class="nav-item">
-                        <a class="nav-link text-warning" href="/profile">{{ "{:,.0f}".format(current_user.balance or 0) }} VND</a>
-                    </li>
+                    {% if current_user.role.name != 'ADMIN' %}
+                        <!-- Hiển thị số dư -->
+                        <li class="nav-item me-2">
+                            <a class="nav-link text-warning fw-bold" href="{{ url_for('profile') }}">
+                                {{ "{:,.0f}".format(current_user.balance or 0) }} VND
+                            </a>
+                        </li>
 
-                    <!-- Nút Nạp tiền: đăng nhập rồi -> vào /topup -->
-                    <li class="nav-item">
-                        <a class="btn btn-sm btn-warning ms-2" href="{{ url_for('topup') }}">Nạp tiền</a>
-                    </li>
+                        <!-- Nút Nạp tiền -->
+                        <li class="nav-item me-2">
+                            <a class="btn btn-sm btn-warning" href="{{ url_for('topup') }}">Nạp tiền</a>
+                        </li>
 
-                    <li class="nav-item d-flex align-items-center">
-                        {% if current_user.is_authenticated %}
-                          <span>
-                            {% if current_user.role.name != 'ADMIN' %}
-                              Chào {{ current_user.username }}
-                              <a href="{{ url_for('profile') }}" class="ms-1">Profile</a>
-
-                            {% endif %}
-                          </span>
-                        {% endif %}
-                    </li>
-
-                    {# nếu có quyền admin thì giữ nguyên #}
-                    {% if current_user.role.name == 'ADMIN' %}
-                    <li class="nav-item">
-                        <a class="nav-link text-info" href="{{ url_for('admin_dashboard') }}">ADMIN</a>
-                    </li>
+                        <!-- Profile -->
+                        <li class="nav-item dropdown me-2">
+                            <a class="btn btn-sm btn-secondary" href="{{ url_for('profile') }}">
+                                {{ current_user.username }}
+                            </a>
+                        </li>
+                    {% else %}
+                        <!-- Nếu là Admin: chỉ hiển thị ADMIN button -->
+                        <li class="nav-item me-2">
+                            <a class="btn btn-sm btn-info" href="{{ url_for('admin_dashboard') }}">ADMIN</a>
+                        </li>
                     {% endif %}
 
+                    <!-- Đăng xuất -->
                     <li class="nav-item">
-                        <a class="btn btn-sm btn-danger ms-2" href="/logout">Đăng xuất</a>
+                        <a class="btn btn-sm btn-danger" href="/logout">Đăng xuất</a>
                     </li>
                 {% else %}
-                    <!-- Chưa đăng nhập: Nút Nạp tiền -> /login?next=/topup -->
-                    <li class="nav-item">
-                        <a class="btn btn-sm btn-warning me-2" href="{{ url_for('login_process', next=url_for('topup')) }}">Nạp tiền</a>
+                    <!-- Chưa đăng nhập -->
+                    <li class="nav-item me-2">
+                        <a class="btn btn-sm btn-warning" href="{{ url_for('login_process', next=url_for('topup')) }}">Nạp tiền</a>
                     </li>
-
-                    <li class="nav-item">
-                        <a class="btn btn-sm btn-light me-2" href="/login">Đăng nhập</a>
+                    <li class="nav-item me-2">
+                        <a class="btn btn-sm btn-light" href="/login">Đăng nhập</a>
                     </li>
                     <li class="nav-item">
                         <a class="btn btn-sm btn-success" href="/register">Đăng ký</a>
                     </li>
                 {% endif %}
             </ul>
-
         </div>
     </div>
 </nav>

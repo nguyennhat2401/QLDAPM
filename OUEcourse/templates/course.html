@@ -2,34 +2,29 @@
 {% block content %}
 <div class="container-fluid mt-4">
     <div class="row g-3">
-        <!-- Sidebar: Danh sách bài học -->
+        <!-- Sidebar -->
         <div class="col-md-3 col-12">
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-primary text-white fw-bold">
                     {{ course.title }}
                 </div>
                 <div class="card-body p-0">
+                    <a href="/course/{{course.id}}/forum" class="btn btn-sm btn-outline-secondary w-100 mt-2">Diễn đàn khóa học</a>
                     <div class="accordion" id="lessonAccordion">
-                        <a href="/course/{{course.id}}/forum" class="btn btn-sm btn-outline-secondary w-100 mt-2">Diễn đàn khóa học</a>
                         {% for lesson in lessons %}
                         <div class="accordion-item">
                             <h2 class="accordion-header" id="heading{{ lesson.id }}">
-                                <button class="accordion-button collapsed" type="button"
-                                        data-bs-toggle="collapse"
-                                        data-bs-target="#collapse{{ lesson.id }}"
-                                        aria-expanded="false"
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#collapse{{ lesson.id }}" aria-expanded="false"
                                         aria-controls="collapse{{ lesson.id }}">
                                     {{ loop.index }}. {{ lesson.title }}
                                 </button>
                             </h2>
                             <div id="collapse{{ lesson.id }}" class="accordion-collapse collapse"
-                                 aria-labelledby="heading{{ lesson.id }}"
-                                 data-bs-parent="#lessonAccordion">
+                                 aria-labelledby="heading{{ lesson.id }}" data-bs-parent="#lessonAccordion">
                                 <div class="accordion-body p-2">
                                     <a href="{{ url_for('course_detail', course_id=course.id, lesson_id=lesson.id) }}"
-                                       class="btn btn-sm btn-outline-primary w-100">
-                                        Xem bài học
-                                    </a>
+                                       class="btn btn-sm btn-outline-primary w-100">Xem bài học</a>
                                 </div>
                             </div>
                         </div>
@@ -39,13 +34,29 @@
             </div>
         </div>
 
-        <!-- Main content: Hiển thị nội dung bài học -->
+        <!-- Main Content -->
         <div class="col-md-9 col-12">
             <div class="card shadow-sm border-0">
                 <div class="card-body">
                     {% if selected_lesson %}
                         <h4 class="fw-bold text-primary mb-3">{{ selected_lesson.title }}</h4>
-                        <p class="lh-lg">{{ selected_lesson.content }}</p>
+
+                        {% if selected_lesson.content %}
+                            {% if selected_lesson.content.endswith(".pdf") %}
+                                <iframe src="{{ selected_lesson.content }}" width="100%" height="600px" style="border:none;"></iframe>
+                            {% else %}
+                                <p class="lh-lg">{{ selected_lesson.content | safe }}</p>
+                            {% endif %}
+                        {% endif %}
+
+                        {% if selected_lesson.video_url %}
+                        <div class="ratio ratio-16x9 mb-3 mt-3">
+                            <iframe src="{{ selected_lesson.video_url }}" frameborder="0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowfullscreen>
+                            </iframe>
+                        </div>
+                        {% endif %}
                     {% else %}
                         <p class="text-muted">Chọn bài học để xem nội dung.</p>
                     {% endif %}

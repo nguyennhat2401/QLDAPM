@@ -21,3 +21,19 @@ def admin_required(f):
             abort(403)
         return f(*args, **kwargs)
     return wrapper
+
+def get_embed_url(video_url):
+    if not video_url:
+        return None
+
+    if "youtube.com/watch?v=" in video_url:
+        video_id = video_url.split("watch?v=")[-1].split("&")[0]
+        return f"https://www.youtube.com/embed/{video_id}"
+
+    if "youtu.be/" in video_url:
+        video_id = video_url.split("youtu.be/")[-1].split("?")[0]
+        return f"https://www.youtube.com/embed/{video_id}"
+
+    return video_url
+
+

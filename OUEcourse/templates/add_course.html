@@ -6,7 +6,8 @@
             Thêm khóa học mới
         </div>
         <div class="card-body p-4">
-            <form method="POST">
+            <!-- Thêm enctype để upload file PDF -->
+            <form method="POST" enctype="multipart/form-data">
                 <!-- Tiêu đề khóa học -->
                 <div class="mb-3">
                     <label class="form-label fw-bold">Tiêu đề khóa học</label>
@@ -28,16 +29,35 @@
                 <!-- Bài học -->
                 <h5 class="mt-4 text-primary fw-bold">Danh sách bài học</h5>
                 <div id="lesson-container">
+                    <!-- Mặc định 1 bài học -->
                     <div class="lesson-item mb-3 p-3 border rounded">
                         <input type="text" name="lesson_title" class="form-control mb-2" placeholder="Tiêu đề bài học" required>
-                        <textarea name="lesson_content" class="form-control" placeholder="Nội dung bài học" rows="2"></textarea>
+
+                        <select class="form-select mb-2" onchange="toggleLessonType(this)">
+                            <option value="text">Bài học dạng Text</option>
+                            <option value="video">Bài học dạng Video</option>
+                            <option value="pdf">Bài học dạng PDF</option>
+                        </select>
+
+                        <div class="lesson-content">
+                            <textarea name="lesson_content" class="form-control" placeholder="Nội dung bài học" rows="2"></textarea>
+                        </div>
                     </div>
                 </div>
+
+                <!-- Nút thêm bài học -->
                 <button type="button" class="btn btn-sm btn-outline-secondary mt-2" onclick="addLesson()">+ Thêm bài học</button>
 
-                <!-- Nút thêm khóa học -->
-                <div class="mt-4">
-                    <button class="btn btn-success w-100">Thêm khóa học</button>
+                <!-- Nút Hủy/Lưu -->
+                <div class="mt-4 d-flex gap-2">
+                    <a href="/instructor/courses"
+                       class="btn btn-outline-secondary flex-fill d-flex align-items-center justify-content-center rounded-pill shadow-sm fw-semibold">
+                        <i class="bi bi-x-circle me-2"></i> Hủy
+                    </a>
+                    <button type="submit"
+                            class="btn btn-success flex-fill d-flex align-items-center justify-content-center rounded-pill shadow-sm fw-semibold">
+                        <i class="bi bi-plus-circle me-2"></i> Thêm khóa học
+                    </button>
                 </div>
             </form>
         </div>
@@ -51,9 +71,30 @@ function addLesson() {
     lessonDiv.classList.add("lesson-item", "mb-3", "p-3", "border", "rounded");
     lessonDiv.innerHTML = `
         <input type="text" name="lesson_title" class="form-control mb-2" placeholder="Tiêu đề bài học" required>
-        <textarea name="lesson_content" class="form-control" placeholder="Nội dung bài học" rows="2"></textarea>
+
+        <select class="form-select mb-2" onchange="toggleLessonType(this)">
+            <option value="text">Bài học dạng Text</option>
+            <option value="video">Bài học dạng Video</option>
+            <option value="pdf">Bài học dạng PDF</option>
+        </select>
+
+        <div class="lesson-content">
+            <textarea name="lesson_content" class="form-control" placeholder="Nội dung bài học" rows="2"></textarea>
+        </div>
     `;
     container.appendChild(lessonDiv);
+}
+
+function toggleLessonType(select) {
+    const wrapper = select.closest(".lesson-item");
+    const contentDiv = wrapper.querySelector(".lesson-content");
+    if (select.value === "video") {
+        contentDiv.innerHTML = `<input type="text" name="lesson_video" class="form-control" placeholder="Nhập link YouTube">`;
+    } else if (select.value === "pdf") {
+        contentDiv.innerHTML = `<input type="file" name="lesson_pdf" class="form-control" accept="application/pdf">`;
+    } else {
+        contentDiv.innerHTML = `<textarea name="lesson_content" class="form-control" placeholder="Nội dung bài học" rows="2"></textarea>`;
+    }
 }
 </script>
 {% endblock %}
